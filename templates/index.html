@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astrion IR Sniffer</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 30px; background: #f4f7f6; color: #333; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        label { font-weight: bold; display: block; margin-top: 10px; }
+        input[type="text"], select, textarea { width: 100%; padding: 8px; margin: 5px 0 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        textarea { height: 220px; font-family: monospace; resize: vertical; }
+        button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; }
+        button:hover { background: #0056b3; }
+        button.btn-success { background: #28a745; }
+        button.btn-success:hover { background: #218838; }
+        button.btn-secondary { background: #6c757d; }
+        button.btn-secondary:hover { background: #5a6268; }
+        .lang-switch button { background: #6c757d; padding: 5px 10px; font-size: 12px; margin-left: 5px; }
+        .lang-switch button.active { background: #28a745; }
+        #progress-bar { width: 100%; background: #e9ecef; height: 22px; border-radius: 11px; overflow: hidden; margin-top: 10px; }
+        #progress-fill { width: 0%; height: 100%; background: #28a745; transition: width 0.3s; }
+        .device-item { padding: 8px 0; border-bottom: 1px solid #eee; }
+        .actions-group { margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
+        
+        table.cmd-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table.cmd-table th, table.cmd-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        table.cmd-table th { background-color: #f2f2f2; }
+        table.cmd-table input { margin: 0; padding: 5px; }
+        .tab-buttons { margin-bottom: 15px; }
+        .device-selector-container { background: #eef2f5; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #dcdfe3; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 data-i18n="title">📡 Astrion IR Sniffer</h1>
+        <div class="lang-switch">
+            <button id="btn-en" onclick="setLanguage('en')" class="active">EN</button>
+            <button id="btn-fr" onclick="setLanguage('fr')">FR</button>
+        </div>
+    </div>
+
+    <!-- Step 1: Connection -->
+    <div class="card">
+        <h3 data-i18n="step1_title">1. Connection & Setup</h3>
+        <label data-i18n="lbl_harmony_ip">Harmony Hub IP Address:</label>
+        <input type="text" id="harmony_ip" value="YOUR_HARMONY_HUB_IP">
+
+        <label data-i18n="lbl_esp_ip">ESPHome Device IP Address:</label>
+        <input type="text" id="esp_ip" value="YOUR_ESPHOME_DEVICE_IP">
+
+        <label data-i18n="lbl_yaml_path">ESPHome config path (relative to this project's folder):</label>
+        <input type="text" id="yaml_path" value="esphome/astrion-ir-sniffer.yaml">
+
+        <button onclick="fetchDevices()" data-i18n="btn_scan">Scan Hub Devices</button>
+    </div>
+
+    <!-- Step 2: Selection -->
+    <div class="card" id="devices-card" style="display:none;">
+        <h3 data-i18n="step2_title">2. Select Devices to Capture</h3>
+        <div id="devices-list"></div>
+        <br>
+        <button onclick="startCapture()" data-i18n="btn_start">Start Capture</button>
+    </div>
+
+    <!-- Step 3: Status -->
+    <div class="card" id="status-card" style="display:none;">
+        <h3 data-i18n="step3_title">3. Capture Progress</h3>
+        <p id="status-text" data-i18n="status_waiting">Waiting to start...</p>
+        <div id="progress-bar"><div id="progress-fill"></div></div>
+    </div>
+
+    <!-- Learning Mode: capture directly from a real remote, no Harmony hub -->
+    <div class="card" id="learn-card">
+        <h3 data-i18n="learn_title">📖 Learning Mode (no Harmony hub needed)</h3>
+        <p data-i18n="learn_desc">For devices not in your Harmony Hub's database (it's no longer maintained, so recent devices are often missing). Point the device's real remote at the ESP32 receiver and press a button — no Harmony hub involved.</p>
+        <p class="hint" data-i18n="learn_reuses_ip">Uses the ESPHome IP and config path from step 1 above.</p>
+
+        <div class="actions-group">
+            <button type="button" id="learn-connect-btn" onclick="learnConnect()" data-i18n="btn_learn_connect">Connect</button>
+            <button type="button" class="btn-secondary" id="learn-disconnect-btn" onclick="learnDisconnect()" style="display:none;" data-i18n="btn_learn_disconnect">Disconnect</button>
+        </div>
+
+        <div id="learn-form" style="display:none;">
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+            <label data-i18n="lbl_category">Category:</label>
+            <select id="learn-category"></select>
+
+            <label data-i18n="lbl_brand">Brand Name:</label>
+            <input type="text" id="learn-brand" placeholder="e.g. Sony">
+
+            <label data-i18n="lbl_model">Model Name:</label>
+            <input type="text" id="learn-model" placeholder="e.g. XR-65A80L">
+
+            <label data-i18n="lbl_learn_cmd_id">Command Key (e.g. power, hdmi1, volume_up):</label>
+            <input type="text" id="learn-cmd-id">
+
+            <label data-i18n="lbl_learn_cmd_label">Label:</label>
+            <input type="text" id="learn-cmd-label">
+
+            <div class="actions-group">
+                <button type="button" onclick="learnCapture()" data-i18n="btn_learn_capture">Capture next button press</button>
+                <button type="button" class="btn-secondary" id="learn-test-btn" onclick="learnTest()" style="display:none;" data-i18n="btn_learn_test">Test / replay</button>
+                <button type="button" class="btn-success" id="learn-save-btn" onclick="learnSaveCommand()" style="display:none;" data-i18n="btn_learn_save">Add command</button>
+            </div>
+            <p id="learn-status" style="font-weight:bold;"></p>
+
+            <div id="learn-device-commands" style="margin-top:10px;"></div>
+            <div class="actions-group">
+                <button type="button" class="btn-success" onclick="learnFinishDevice()" data-i18n="btn_learn_finish_device" style="display:none;" id="learn-finish-btn">Send this device to the editor below</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 4: JSON Editor & Interactive Form -->
+    <div class="card" id="github-card">
+        <h3 data-i18n="step4_title">4. Edit & Save / Submit to GitHub</h3>
+        <p data-i18n="lbl_editor_desc">Load your captured JSON file, edit details using the visual form or raw JSON, then save locally or submit directly to GitHub Issue #50.</p>
+        
+        <input type="file" id="file-input" accept=".json" style="display:none;" onchange="handleFileSelect(event)">
+        
+        <div class="actions-group">
+            <button type="button" onclick="document.getElementById('file-input').click()" data-i18n="btn_open_file">Open Local File</button>
+            <button type="button" onclick="loadLatestExport()" data-i18n="btn_load_export">Load Recent Export</button>
+        </div>
+
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+
+        <div class="tab-buttons">
+            <button type="button" class="btn-secondary" onclick="toggleEditMode('form')" data-i18n="btn_mode_form">Visual Form Editor</button>
+            <button type="button" class="btn-secondary" onclick="toggleEditMode('json')" data-i18n="btn_mode_json">Raw JSON Editor</button>
+        </div>
+
+        <div id="editor-form-view">
+            <div id="device-selector-wrapper" class="device-selector-container" style="display:none;">
+                <label data-i18n="lbl_select_device_edit">Select Device to Edit:</label>
+                <select id="edit-device-index" onchange="switchDevice(this.value)"></select>
+            </div>
+
+            <label data-i18n="lbl_category">Category:</label>
+            <select id="edit-category" onchange="syncFormToFinalStructure()"></select>
+
+            <label data-i18n="lbl_brand">Brand Name:</label>
+            <input type="text" id="edit-brand" oninput="syncFormToFinalStructure()">
+
+            <label data-i18n="lbl_model">Model Name:</label>
+            <input type="text" id="edit-model" oninput="syncFormToFinalStructure()">
+
+            <label data-i18n="lbl_commands">Captured Commands:</label>
+            <table class="cmd-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="th_cmd_key">Command Key</th>
+                        <th data-i18n="th_cmd_label">Label</th>
+                        <th data-i18n="th_pronto">Pronto Code</th>
+                        <th data-i18n="th_pronto_repeat">Pronto Repeat</th>
+                    </tr>
+                </thead>
+                <tbody id="commands-table-body"></tbody>
+            </table>
+        </div>
+
+        <div id="editor-json-view" style="display:none;">
+            <label for="json-editor" data-i18n="lbl_json_editor">Raw JSON Content (Final Format):</label>
+            <textarea id="json-editor" oninput="syncJSONToForm()"></textarea>
+        </div>
+
+        <div class="actions-group">
+            <button type="button" class="btn-secondary" onclick="saveJSONLocally()" data-i18n="btn_save_local">Save JSON Locally</button>
+            <button type="button" class="btn-success" onclick="sendToGitHubIssue()" data-i18n="btn_send_issue">Submit to Astrion (GitHub)</button>
+        </div>
+    </div>
+
+    <script>
+        const PINNED_ISSUE_NUMBER = 50;
+
+        const astrionCategories = [
+            { id: "ac", label: "AC" },
+            { id: "audio", label: "Audio" },
+            { id: "camera", label: "Camera" },
+            { id: "fan", label: "Fan" },
+            { id: "lights", label: "Lights" },
+            { id: "player", label: "Player" },
+            { id: "plug", label: "Plug" },
+            { id: "robot", label: "Robot" },
+            { id: "set-top-box", label: "Set-Top Box" },
+            { id: "tv", label: "TV" }
+        ];
+
+        let internalDevices = [];
+        let activeDeviceIndex = 0;
+
+        const translations = {
+            en: {
+                title: "📡 Astrion IR Sniffer",
+                step1_title: "1. Connection & Setup",
+                lbl_harmony_ip: "Harmony Hub IP Address:",
+                lbl_esp_ip: "ESPHome Device IP Address:",
+                lbl_yaml_path: "ESPHome config path (relative to this project's folder):",
+                btn_scan: "Scan Hub Devices",
+                step2_title: "2. Select Devices to Capture",
+                btn_start: "Start Automatic Capture",
+                step3_title: "3. Capture Progress",
+                status_waiting: "Waiting to start...",
+                status_done: "Completed!",
+                alert_done: "Capture completed! Export file generated.",
+                cmds: "commands",
+                step4_title: "4. Edit & Save / Submit to GitHub",
+                lbl_editor_desc: "Load your captured JSON file, edit details using the visual form or raw JSON, then save locally or submit directly to GitHub Issue #50.",
+                btn_open_file: "Open Local File",
+                btn_load_export: "Load Recent Export",
+                lbl_json_editor: "Raw JSON Content (Final Format):",
+                btn_save_local: "Save JSON Locally",
+                btn_send_issue: "Submit to Astrion (GitHub)",
+                alert_invalid_json: "Invalid JSON format. Please verify syntax.",
+                alert_empty_json: "No JSON content to save or send.",
+                btn_mode_form: "Visual Form Editor",
+                btn_mode_json: "Raw JSON Editor",
+                lbl_select_device_edit: "Select Device to Edit:",
+                lbl_category: "Category:",
+                lbl_brand: "Brand Name:",
+                lbl_model: "Model Name:",
+                lbl_commands: "Captured Commands:",
+                th_cmd_key: "Command Key",
+                th_cmd_label: "Label",
+                th_pronto: "Pronto Code",
+                th_pronto_repeat: "Pronto Repeat",
+                learn_title: "📖 Learning Mode (no Harmony hub needed)",
+                learn_desc: "For devices not in your Harmony Hub's database (it's no longer maintained, so recent devices are often missing). Point the device's real remote at the ESP32 receiver and press a button — no Harmony hub involved.",
+                learn_reuses_ip: "Uses the ESPHome IP and config path from step 1 above.",
+                btn_learn_connect: "Connect",
+                btn_learn_disconnect: "Disconnect",
+                lbl_learn_cmd_id: "Command Key (e.g. power, hdmi1, volume_up):",
+                lbl_learn_cmd_label: "Label:",
+                btn_learn_capture: "Capture next button press",
+                btn_learn_test: "Test / replay",
+                btn_learn_save: "Add command",
+                btn_learn_finish_device: "Send this device to the editor below",
+                learn_status_waiting: "Connected — fill in the command key, then press Capture and hit a button on the remote.",
+                learn_status_listening: "Listening... press a button on the remote now.",
+                learn_status_captured: "Captured! Review below, then Test or Add command.",
+                learn_status_timeout: "No signal detected — point the remote at the receiver and try again.",
+                learn_status_error: "Error: "
+            },
+            fr: {
+                title: "📡 Astrion IR Sniffer",
+                step1_title: "1. Connexion et Paramètres",
+                lbl_harmony_ip: "Adresse IP du Hub Harmony :",
+                lbl_esp_ip: "Adresse IP de l'appareil ESPHome :",
+                lbl_yaml_path: "Chemin du fichier YAML ESPHome (relatif au dossier du projet) :",
+                btn_scan: "Scanner les appareils du Hub",
+                step2_title: "2. Sélectionner les appareils à capturer",
+                btn_start: "Lancer la capture automatique",
+                step3_title: "3. Progression de la capture",
+                status_waiting: "En attente du démarrage...",
+                status_done: "Terminé !",
+                alert_done: "Capture terminée ! Le fichier d'export a été généré.",
+                cmds: "commandes",
+                step4_title: "4. Édition & Enregistrement / Soumission GitHub",
+                lbl_editor_desc: "Charge ton fichier JSON, modifie la catégorie, la marque et le modèle via le formulaire ou le JSON brut, puis sauvegarde localement ou soumets sur l'issue épinglée #50.",
+                btn_open_file: "Ouvrir un fichier local",
+                btn_load_export: "Charger l'export récent",
+                lbl_json_editor: "Contenu JSON Brut (Format Final) :",
+                btn_save_local: "Sauvegarder le JSON localement",
+                btn_send_issue: "Soumettre à Astrion (GitHub)",
+                alert_invalid_json: "Le contenu JSON est invalide. Vérifie la syntaxe.",
+                alert_empty_json: "Aucun contenu JSON à sauvegarder ou envoyer.",
+                btn_mode_form: "Éditeur Formulaire",
+                btn_mode_json: "Éditeur JSON Brut",
+                lbl_select_device_edit: "Sélectionner l'appareil à éditer :",
+                lbl_category: "Catégorie :",
+                lbl_brand: "Nom de la Marque :",
+                lbl_model: "Nom du Modèle :",
+                lbl_commands: "Commandes Capturées :",
+                th_cmd_key: "Clé Commande",
+                th_cmd_label: "Libellé (Label)",
+                th_pronto: "Code Pronto",
+                th_pronto_repeat: "Répétition Pronto",
+                learn_title: "📖 Mode Apprentissage (sans hub Harmony)",
+                learn_desc: "Pour les appareils absents de la base de votre Hub Harmony (elle n'est plus maintenue, donc les appareils récents manquent souvent). Pointez la vraie télécommande de l'appareil vers le récepteur ESP32 et appuyez sur un bouton — pas besoin du hub Harmony.",
+                learn_reuses_ip: "Utilise l'IP ESPHome et le chemin YAML renseignés à l'étape 1 ci-dessus.",
+                btn_learn_connect: "Connecter",
+                btn_learn_disconnect: "Déconnecter",
+                lbl_learn_cmd_id: "Clé de commande (ex : power, hdmi1, volume_up) :",
+                lbl_learn_cmd_label: "Libellé :",
+                btn_learn_capture: "Capturer le prochain appui",
+                btn_learn_test: "Tester / rejouer",
+                btn_learn_save: "Ajouter la commande",
+                btn_learn_finish_device: "Envoyer cet appareil vers l'éditeur ci-dessous",
+                learn_status_waiting: "Connecté — renseignez la clé de commande, puis Capturer et appuyez sur un bouton de la télécommande.",
+                learn_status_listening: "En écoute... appuyez sur un bouton de la télécommande maintenant.",
+                learn_status_captured: "Capturé ! Vérifiez ci-dessous, puis Tester ou Ajouter la commande.",
+                learn_status_timeout: "Aucun signal détecté — pointez la télécommande vers le récepteur et réessayez.",
+                learn_status_error: "Erreur : "
+            }
+        };
+
+        let currentLang = 'en';
+
+        function toSnakeCase(str) {
+            if (!str) return "";
+            return str
+                .replace(/([a-z])([A-Z])/g, '$1_$2')
+                .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
+                .replace(/[\s\-_]+/g, '_')
+                .toLowerCase()
+                .trim();
+        }
+
+        function initCategoriesDropdown() {
+            const select = document.getElementById('edit-category');
+            select.innerHTML = '';
+            astrionCategories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.id.toUpperCase();
+                opt.innerText = `${cat.label} (${cat.id.toUpperCase()})`;
+                select.appendChild(opt);
+            });
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    el.innerText = translations[lang][key];
+                }
+            });
+
+            document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+            document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
+        }
+
+        function toggleEditMode(mode) {
+            if (mode === 'form') {
+                document.getElementById('editor-form-view').style.display = 'block';
+                document.getElementById('editor-json-view').style.display = 'none';
+                syncJSONToForm();
+            } else {
+                document.getElementById('editor-form-view').style.display = 'none';
+                document.getElementById('editor-json-view').style.display = 'block';
+                syncFormToFinalStructure();
+            }
+        }
+
+        function cleanEsphomePronto(rawStr) {
+            if (!rawStr) return { pronto: "", pronto_repeat: "", meta: {} };
+
+            let meta = {};
+
+            let jvcMatch = rawStr.match(/Received JVC: ([^\s|]+)/);
+            if (jvcMatch) meta.jvc = `JVC: data=${jvcMatch[1]}`;
+
+            let lgMatch = rawStr.match(/Received LG: ([^\s|]+)/);
+            if (lgMatch) meta.lg = `LG: data=${lgMatch[1]}`;
+
+            let necMatch = rawStr.match(/Received NEC: ([^|]+)/);
+            if (necMatch) meta.nec = `NEC: ${necMatch[1].trim()}`;
+
+            let pioneerMatch = rawStr.match(/Received Pioneer: ([^\s|]+)/);
+            if (pioneerMatch) meta.pioneer = `Pioneer: ${pioneerMatch[1]}`;
+
+            let cleanedHex = rawStr
+                .replace(/\[\d\d:\d\d:\d\d\.\d\d\d\]/g, '')
+                .replace(/\[I\]\[remote\.[^\]]+\]:/g, '')
+                .replace(/Received Pronto: data=/g, '')
+                .replace(/Received [^|]+/g, '')
+                .replace(/\|/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            let hexTokens = cleanedHex.match(/\b[0-9A-Fa-f]{4}\b/g) || [];
+            
+            let mainPronto = "";
+            let repeatPronto = "";
+
+            if (hexTokens.length > 0) {
+                let currentSeq = [];
+                let seqs = [];
+                
+                for (let i = 0; i < hexTokens.length; i++) {
+                    if (hexTokens[i] === "0000" && currentSeq.length > 0) {
+                        seqs.push(currentSeq.join(" "));
+                        currentSeq = [];
+                    }
+                    currentSeq.push(hexTokens[i]);
+                }
+                if (currentSeq.length > 0) seqs.push(currentSeq.join(" "));
+
+                if (seqs.length > 0) {
+                    if (seqs[0].length > 20) {
+                        mainPronto = seqs[0];
+                        if (seqs.length > 1) repeatPronto = seqs[1];
+                    } else if (seqs.length > 1) {
+                        mainPronto = seqs[1];
+                        repeatPronto = seqs[0];
+                    } else {
+                        mainPronto = seqs[0];
+                    }
+                }
+            }
+
+            return {
+                pronto: mainPronto,
+                pronto_repeat: repeatPronto,
+                meta: Object.keys(meta).length > 0 ? meta : undefined
+            };
+        }
+
+        function parseIncomingData(data) {
+            internalDevices = [];
+
+            if (Array.isArray(data)) {
+                data.forEach(item => {
+                    let cat = (item.category || "TV").toUpperCase();
+                    let brand = item.brand || item.brand_name || "Unknown Brand";
+                    let model = item.model || (item.models && item.models[0] ? item.models[0].model_name : "Unknown Model");
+                    let cmds = {};
+
+                    let rawCmds = item.commands || {};
+                    Object.keys(rawCmds).forEach(key => {
+                        let c = rawCmds[key];
+                        let keySnake = toSnakeCase(key);
+                        
+                        if (typeof c === 'object') {
+                            let label = c.label || key;
+                            let prontoVal = c.pronto || c.code || "";
+                            let prontoRepeat = c.pronto_repeat || "";
+                            let metaVal = c.meta || {};
+
+                            if (prontoVal.length < 20 && prontoRepeat.length > 20) {
+                                let tmp = prontoVal;
+                                prontoVal = prontoRepeat;
+                                prontoRepeat = tmp;
+                            }
+
+                            if (prontoVal.includes('[') || prontoVal.includes('remote.')) {
+                                let parsed = cleanEsphomePronto(prontoVal);
+                                prontoVal = parsed.pronto;
+                                prontoRepeat = parsed.pronto_repeat || prontoRepeat;
+                                metaVal = (metaVal && Object.keys(metaVal).length > 0) ? metaVal : parsed.meta;
+                            }
+
+                            if (prontoVal || prontoRepeat) {
+                                cmds[keySnake] = {
+                                    label: label,
+                                    pronto: prontoVal,
+                                    pronto_repeat: prontoRepeat,
+                                    meta: metaVal
+                                };
+                            }
+                        }
+                    });
+
+                    internalDevices.push({
+                        category: cat,
+                        brand_name: brand,
+                        model_name: model,
+                        commands: cmds
+                    });
+                });
+            } else if (data && data.brands && Array.isArray(data.brands)) {
+                let cat = (data.category || "TV").toUpperCase();
+                data.brands.forEach(b => {
+                    let brandName = b.brand_name || "Unknown Brand";
+                    (b.models || []).forEach(m => {
+                        let cleanCmds = {};
+                        let rawCmds = m.commands || {};
+                        Object.keys(rawCmds).forEach(k => {
+                            let kSnake = toSnakeCase(k);
+                            let cmdObj = rawCmds[k];
+                            
+                            let prontoVal = cmdObj.pronto || "";
+                            let prontoRepeat = cmdObj.pronto_repeat || "";
+                            
+                            if (prontoVal.length < 20 && prontoRepeat.length > 20) {
+                                let tmp = prontoVal;
+                                prontoVal = prontoRepeat;
+                                prontoRepeat = tmp;
+                            }
+
+                            if (prontoVal || prontoRepeat) {
+                                cleanCmds[kSnake] = {
+                                    label: cmdObj.label || k,
+                                    pronto: prontoVal,
+                                    pronto_repeat: prontoRepeat,
+                                    meta: cmdObj.meta || {}
+                                };
+                            }
+                        });
+
+                        internalDevices.push({
+                            category: cat,
+                            brand_name: brandName,
+                            model_name: m.model_name || "Unknown Model",
+                            commands: cleanCmds
+                        });
+                    });
+                });
+            }
+
+            if (internalDevices.length === 0) {
+                internalDevices.push({
+                    category: "TV",
+                    brand_name: "LG",
+                    model_name: "HU710PW-GL",
+                    commands: {}
+                });
+            }
+
+            updateFormFromInternalState();
+        }
+
+        function buildTargetJsonObject() {
+            if (internalDevices.length === 0) return {};
+
+            let mainCategory = (internalDevices[activeDeviceIndex]?.category || internalDevices[0].category || "TV").toUpperCase();
+
+            let brandsMap = {};
+            internalDevices.forEach(dev => {
+                let bName = dev.brand_name || "Unknown Brand";
+                if (!brandsMap[bName]) {
+                    brandsMap[bName] = [];
+                }
+                brandsMap[bName].push({
+                    model_name: dev.model_name || "Unknown Model",
+                    commands: dev.commands || {}
+                });
+            });
+
+            let brandsArray = Object.keys(brandsMap).map(bName => ({
+                brand_name: bName,
+                models: brandsMap[bName]
+            }));
+
+            return {
+                category: mainCategory,
+                brands: brandsArray
+            };
+        }
+
+        function updateFormFromInternalState() {
+            const selectorWrapper = document.getElementById('device-selector-wrapper');
+            const select = document.getElementById('edit-device-index');
+
+            if (internalDevices.length > 1) {
+                selectorWrapper.style.display = 'block';
+                select.innerHTML = '';
+                internalDevices.forEach((dev, idx) => {
+                    const opt = document.createElement('option');
+                    opt.value = idx;
+                    opt.innerText = `[${dev.category}] ${dev.brand_name} ${dev.model_name} (#${idx + 1})`;
+                    select.appendChild(opt);
+                });
+                select.value = activeDeviceIndex;
+            } else {
+                selectorWrapper.style.display = 'none';
+                activeDeviceIndex = 0;
+            }
+
+            renderDeviceForm(activeDeviceIndex);
+            document.getElementById('json-editor').value = JSON.stringify(buildTargetJsonObject(), null, 2);
+        }
+
+        function switchDevice(index) {
+            activeDeviceIndex = parseInt(index, 10);
+            renderDeviceForm(activeDeviceIndex);
+            document.getElementById('json-editor').value = JSON.stringify(buildTargetJsonObject(), null, 2);
+        }
+
+        function renderDeviceForm(index) {
+            const item = internalDevices[index];
+            if (!item) return;
+
+            const categorySelect = document.getElementById('edit-category');
+            categorySelect.value = (item.category || "TV").toUpperCase();
+
+            document.getElementById('edit-brand').value = item.brand_name || '';
+            document.getElementById('edit-model').value = item.model_name || '';
+
+            const tbody = document.getElementById('commands-table-body');
+            tbody.innerHTML = '';
+
+            let cmds = item.commands || {};
+            Object.keys(cmds).forEach((key) => {
+                const cmdObj = cmds[key] || {};
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><input type="text" value="${key}" oninput="updateCommandKey('${key}', this.value)"></td>
+                    <td><input type="text" value="${cmdObj.label || ''}" oninput="updateCommandProp('${key}', 'label', this.value)"></td>
+                    <td><input type="text" value="${cmdObj.pronto || ''}" oninput="updateCommandProp('${key}', 'pronto', this.value)"></td>
+                    <td><input type="text" value="${cmdObj.pronto_repeat || ''}" oninput="updateCommandProp('${key}', 'pronto_repeat', this.value)"></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateCommandKey(oldKey, newKey) {
+            let item = internalDevices[activeDeviceIndex];
+            if (item && item.commands && oldKey !== newKey) {
+                let newKeySnake = toSnakeCase(newKey);
+                let val = item.commands[oldKey];
+                delete item.commands[oldKey];
+                item.commands[newKeySnake] = val;
+                syncFormToFinalStructure();
+            }
+        }
+
+        function updateCommandProp(key, prop, value) {
+            let item = internalDevices[activeDeviceIndex];
+            if (item && item.commands && item.commands[key]) {
+                item.commands[key][prop] = value;
+                syncFormToFinalStructure();
+            }
+        }
+
+        function syncFormToFinalStructure() {
+            const category = document.getElementById('edit-category').value;
+            const brand = document.getElementById('edit-brand').value;
+            const model = document.getElementById('edit-model').value;
+
+            if (internalDevices[activeDeviceIndex]) {
+                internalDevices[activeDeviceIndex].category = category.toUpperCase();
+                internalDevices[activeDeviceIndex].brand_name = brand;
+                internalDevices[activeDeviceIndex].model_name = model;
+            }
+
+            document.getElementById('json-editor').value = JSON.stringify(buildTargetJsonObject(), null, 2);
+        }
+
+        function syncJSONToForm() {
+            try {
+                const text = document.getElementById('json-editor').value.trim();
+                if (text) {
+                    const parsed = JSON.parse(text);
+                    parseIncomingData(parsed);
+                }
+            } catch (e) {}
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    activeDeviceIndex = 0;
+                    parseIncomingData(parsed);
+                } catch (err) {
+                    alert(translations[currentLang].alert_invalid_json);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function loadLatestExport() {
+            try {
+                const res = await fetch('/api/get-latest-export');
+                if (res.ok) {
+                    const data = await res.json();
+                    activeDeviceIndex = 0;
+                    parseIncomingData(data);
+                } else {
+                    alert("Could not load latest export from server.");
+                }
+            } catch (e) {
+                console.error("Error loading export:", e);
+            }
+        }
+
+        function saveJSONLocally() {
+            syncFormToFinalStructure();
+
+            if (internalDevices.length === 0) {
+                alert(translations[currentLang].alert_empty_json);
+                return;
+            }
+
+            const categoriesMap = {};
+
+            internalDevices.forEach(dev => {
+                const cat = (dev.category || "TV").toUpperCase();
+                const bName = dev.brand_name || "Unknown Brand";
+
+                if (!categoriesMap[cat]) categoriesMap[cat] = {};
+                if (!categoriesMap[cat][bName]) categoriesMap[cat][bName] = [];
+
+                categoriesMap[cat][bName].push({
+                    model_name: dev.model_name || "Unknown Model",
+                    commands: dev.commands || {}
+                });
+            });
+
+            Object.keys(categoriesMap).forEach(cat => {
+                const brandsMap = categoriesMap[cat];
+                
+                const brandsArray = Object.keys(brandsMap).map(bName => ({
+                    brand_name: bName,
+                    models: brandsMap[bName]
+                }));
+
+                const categoryObj = {
+                    category: cat,
+                    brands: brandsArray
+                };
+
+                const jsonText = JSON.stringify(categoryObj, null, 2);
+                const fileName = `${cat.toLowerCase()}.json`;
+
+                const blob = new Blob([jsonText], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        function sendToGitHubIssue() {
+            syncFormToFinalStructure();
+
+            const finalObj = buildTargetJsonObject();
+            const jsonText = JSON.stringify(finalObj, null, 2);
+            if (!jsonText) {
+                alert(translations[currentLang].alert_empty_json);
+                return;
+            }
+
+            const item = internalDevices[activeDeviceIndex] || {};
+            const category = finalObj.category || "TV";
+            const brand = item.brand_name || "Unknown Brand";
+            const model = item.model_name || "Unknown Model";
+
+            const commentBody = encodeURIComponent(
+                `### 📡 New IR Capture: [${category}] ${brand} - ${model}\n\n` +
+                `\`\`\`json\n${jsonText}\n\`\`\``
+            );
+
+            const githubUrl = `https://github.com/dckiller51/astrion-custom-dashboard/issues/${PINNED_ISSUE_NUMBER}#issue-comment-box?body=${commentBody}`;
+            window.open(githubUrl, '_blank');
+        }
+
+        async function fetchDevices() {
+            const ip = document.getElementById('harmony_ip').value;
+            const res = await fetch('/api/fetch-devices', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({harmony_ip: ip})
+            });
+            const data = await res.json();
+            if (data.devices) {
+                const list = document.getElementById('devices-list');
+                list.innerHTML = '';
+                const cmdText = translations[currentLang].cmds;
+                data.devices.forEach(dev => {
+                    list.innerHTML += `<div class="device-item">
+                        <input type="checkbox" value="${dev.id}" class="dev-cb" checked> 
+                        <strong>${dev.label}</strong> (${dev.commands_count} ${cmdText})
+                    </div>`;
+                });
+                document.getElementById('devices-card').style.display = 'block';
+            }
+        }
+
+        async function startCapture() {
+            const harmony_ip = document.getElementById('harmony_ip').value;
+            const esp_ip = document.getElementById('esp_ip').value;
+            const yaml_path = document.getElementById('yaml_path').value;
+            const selected = Array.from(document.querySelectorAll('.dev-cb:checked')).map(cb => cb.value);
+
+            await fetch('/api/start-capture', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({harmony_ip, esp_ip, yaml_path, device_ids: selected})
+            });
+
+            document.getElementById('status-card').style.display = 'block';
+            pollStatus();
+        }
+
+        function pollStatus() {
+            const interval = setInterval(async () => {
+                const res = await fetch('/api/status');
+                const st = await res.json();
+                
+                document.getElementById('status-text').innerText = `${st.current_command} (${st.progress}/${st.total})`;
+                const pct = st.total > 0 ? (st.progress / st.total) * 100 : 0;
+                document.getElementById('progress-fill').style.width = `${pct}%`;
+
+                if (!st.running && st.progress > 0) {
+                    clearInterval(interval);
+                    alert(translations[currentLang].alert_done);
+                    loadLatestExport();
+                }
+            }, 1000);
+        }
+
+        // ---- Learning Mode ---------------------------------------------------
+        //
+        // Same {pronto, pronto_repeat} shape the bulk-capture/editor already use
+        // (see app.py's parse_pronto_capture) — captured commands are staged
+        // here per-device, then handed to parseIncomingData() so "Send this
+        // device to the editor below" reuses the exact same save/submit-to-GitHub
+        // flow the Harmony-driven flow already has, instead of duplicating it.
+
+        let learnConnected = false;
+        let learnPendingCommands = {}; // commandId -> {label, pronto, pronto_repeat}
+        let learnLastCapture = null;   // {pronto, pronto_repeat} awaiting Test/Add
+
+        function initLearnCategoryDropdown() {
+            const select = document.getElementById('learn-category');
+            select.innerHTML = '';
+            astrionCategories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.id.toUpperCase();
+                opt.innerText = `${cat.label} (${cat.id.toUpperCase()})`;
+                select.appendChild(opt);
+            });
+        }
+
+        function setLearnStatus(key, extra) {
+            const el = document.getElementById('learn-status');
+            el.innerText = (translations[currentLang][key] || key) + (extra || '');
+        }
+
+        async function learnConnect() {
+            const esp_ip = document.getElementById('esp_ip').value;
+            const yaml_path = document.getElementById('yaml_path').value;
+            const res = await fetch('/api/learn/connect', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({esp_ip, yaml_path})
+            });
+            const data = await res.json();
+            if (data.error) { alert(data.error); return; }
+            learnConnected = true;
+            learnPendingCommands = {};
+            document.getElementById('learn-form').style.display = 'block';
+            document.getElementById('learn-connect-btn').style.display = 'none';
+            document.getElementById('learn-disconnect-btn').style.display = '';
+            renderLearnCommandsList();
+            setLearnStatus('learn_status_waiting');
+        }
+
+        async function learnDisconnect() {
+            await fetch('/api/learn/disconnect', {method: 'POST'});
+            learnConnected = false;
+            document.getElementById('learn-form').style.display = 'none';
+            document.getElementById('learn-connect-btn').style.display = '';
+            document.getElementById('learn-disconnect-btn').style.display = 'none';
+        }
+
+        async function learnCapture() {
+            if (!learnConnected) return;
+            const cmdId = document.getElementById('learn-cmd-id').value.trim();
+            if (!cmdId) { alert('Give this command a key first, e.g. "power".'); return; }
+
+            setLearnStatus('learn_status_listening');
+            document.getElementById('learn-test-btn').style.display = 'none';
+            document.getElementById('learn-save-btn').style.display = 'none';
+            learnLastCapture = null;
+
+            const res = await fetch('/api/learn/capture', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({timeout_s: 8})
+            });
+            const data = await res.json();
+            if (data.error) {
+                setLearnStatus(res.status === 408 ? 'learn_status_timeout' : 'learn_status_error', data.error);
+                return;
+            }
+            learnLastCapture = data;
+            setLearnStatus('learn_status_captured');
+            document.getElementById('learn-test-btn').style.display = '';
+            document.getElementById('learn-save-btn').style.display = '';
+        }
+
+        async function learnTest() {
+            if (!learnLastCapture) return;
+            const esp_ip = document.getElementById('esp_ip').value;
+            const res = await fetch('/api/learn/test', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({esp_ip, pronto: learnLastCapture.pronto})
+            });
+            const data = await res.json();
+            if (data.error) alert(data.error);
+        }
+
+        function learnSaveCommand() {
+            if (!learnLastCapture) return;
+            const cmdId = document.getElementById('learn-cmd-id').value.trim();
+            if (!cmdId) { alert('Give this command a key first, e.g. "power".'); return; }
+            const label = document.getElementById('learn-cmd-label').value.trim() || cmdId;
+
+            learnPendingCommands[cmdId] = {
+                label,
+                pronto: learnLastCapture.pronto,
+                pronto_repeat: learnLastCapture.pronto_repeat || '',
+                meta: {source: 'ESPHome remote receiver capture (learned from physical remote)'}
+            };
+
+            document.getElementById('learn-cmd-id').value = '';
+            document.getElementById('learn-cmd-label').value = '';
+            document.getElementById('learn-test-btn').style.display = 'none';
+            document.getElementById('learn-save-btn').style.display = 'none';
+            learnLastCapture = null;
+            renderLearnCommandsList();
+            setLearnStatus('learn_status_waiting');
+        }
+
+        function removeLearnCommand(cmdId) {
+            delete learnPendingCommands[cmdId];
+            renderLearnCommandsList();
+        }
+
+        function renderLearnCommandsList() {
+            const el = document.getElementById('learn-device-commands');
+            const ids = Object.keys(learnPendingCommands);
+            const finishBtn = document.getElementById('learn-finish-btn');
+            finishBtn.style.display = ids.length ? '' : 'none';
+            if (!ids.length) { el.innerHTML = ''; return; }
+            el.innerHTML = '<label>' + (currentLang === 'fr' ? 'Commandes de cet appareil :' : 'Commands for this device:') + '</label>';
+            ids.forEach(id => {
+                const cmd = learnPendingCommands[id];
+                const row = document.createElement('div');
+                row.className = 'device-item';
+                row.innerHTML = `<code>${id}</code> — ${cmd.label} <span class="remove" style="color:#dc3545;cursor:pointer;float:right" onclick="removeLearnCommand('${id}')">✕</span>`;
+                el.appendChild(row);
+            });
+        }
+
+        function learnFinishDevice() {
+            const category = document.getElementById('learn-category').value;
+            const brand = document.getElementById('learn-brand').value.trim();
+            const model = document.getElementById('learn-model').value.trim();
+            if (!brand || !model) { alert('Fill in brand and model first.'); return; }
+
+            // Merge into whatever's already in the editor rather than
+            // replacing it, so multiple learned devices (or a mix of
+            // learned + Harmony-exported ones) can be staged together
+            // before a single Save/Submit.
+            const existing = internalDevices.length ? internalDevices : [];
+            existing.push({
+                category: category.toUpperCase(),
+                brand_name: brand,
+                model_name: model,
+                commands: learnPendingCommands
+            });
+            internalDevices = existing;
+            activeDeviceIndex = internalDevices.length - 1;
+            updateFormFromInternalState();
+
+            learnPendingCommands = {};
+            document.getElementById('learn-brand').value = '';
+            document.getElementById('learn-model').value = '';
+            renderLearnCommandsList();
+            document.getElementById('github-card').scrollIntoView({behavior: 'smooth'});
+        }
+
+        window.onload = function() {
+            initCategoriesDropdown();
+            initLearnCategoryDropdown();
+        };
+    </script>
+</body>
+</html>

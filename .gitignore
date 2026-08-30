@@ -1,0 +1,21 @@
+# ESPHome & Home Automation Secrets
+secrets.yaml
+*.secret.yaml
+
+# Data Exports
+export_telecommandes.json
+*.json
+
+# Python / Environment
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Docker / System
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
