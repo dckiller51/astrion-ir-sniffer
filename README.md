@@ -1,7 +1,5 @@
 # 📡 Astrion IR Sniffer User Guide
 
-[![Ko-fi](https://img.shields.io/badge/Ko--fi-Buy_me_a_coffee-F16061?style=flat-square&logo=ko-fi&logoColor=white)](https://ko-fi.com/dckiller)
-
 Astrion IR Sniffer captures Infrared (IR) codes using an ESPHome receiver
 (ESP8285 or ESP32) and exports them as Pronto Hex, ready to drop into
 Astrion's `ir-database/`. Two capture modes:
