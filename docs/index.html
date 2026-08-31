@@ -672,7 +672,8 @@
       renderCategoryNav();
       renderTree();
       try{
-        const res = await fetch(cat.file);
+        const prefix = window.location.hostname.includes('github.io') ? window.location.pathname.replace(/\/[^/]*$/, '/') : '';
+        const res = await fetch(prefix + cat.file);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         cat.data = await res.json();
       } catch(err){
@@ -800,7 +801,8 @@
 
       categories.forEach(async (cat, id) => {
         try {
-          const catRes = await fetch(cat.file);
+          const prefix = window.location.hostname.includes('github.io') ? window.location.pathname.replace(/\/[^/]*$/, '/') : '';
+          const catRes = await fetch(prefix + cat.file);
           if (catRes.ok) {
             cat.data = await catRes.json();
             renderCategoryNav();
