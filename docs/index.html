@@ -537,12 +537,22 @@
     categoryNav.innerHTML = '';
     categories.forEach((cat, id) => {
       const btn = document.createElement('button');
-      const count = categorySelectionCount(id);
+      const selectedCount = categorySelectionCount(id);
+      
+      let totalAvailable = 0;
+      if (cat.data && cat.data.brands) {
+        cat.data.brands.forEach(brand => {
+          if (brand.models) totalAvailable += brand.models.length;
+        });
+      }
+
       if (id === activeCategoryId) btn.classList.add('active');
-      if (count > 0) btn.classList.add('has-selection');
+      if (selectedCount > 0) btn.classList.add('has-selection');
+      
       btn.innerHTML =
         '<span class="cat-label">' + escapeHtml(cat.label) + '</span>' +
-        '<span class="cat-count">' + count + '</span>';
+        '<span class="cat-count">' + (cat.data ? selectedCount + '/' + totalAvailable : selectedCount) + '</span>';
+      
       btn.addEventListener('click', () => selectCategory(id));
       categoryNav.appendChild(btn);
     });
@@ -775,6 +785,7 @@
       const res = await fetch('index.json');
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const idx = await res.json();
+      
       (idx.categories || []).forEach(c => {
         categories.set(c.id, {
           label: c.label, file: c.file,
@@ -782,9 +793,23 @@
           selected: new Map()
         });
       });
+
       renderCategoryNav();
       tree.innerHTML = '<div class="empty-state">' + t('choose_category') + '</div>';
       refreshChrome();
+
+      categories.forEach(async (cat, id) => {
+        try {
+          const catRes = await fetch(cat.file);
+          if (catRes.ok) {
+            cat.data = await catRes.json();
+            renderCategoryNav();
+          }
+        } catch (err) {
+          console.error('Erreur de préchargement pour ' + cat.file, err);
+        }
+      });
+
     } catch(err){
       tree.innerHTML = '<div class="empty-state">' + t('index_load_error') + '</div>';
       console.error(err);

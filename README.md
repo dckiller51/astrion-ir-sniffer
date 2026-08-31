@@ -125,6 +125,7 @@ open a pre-filled comment on the project's pinned IR-database issue.
 
 ## Useful links
 
+- [Astrion IR Database Selector (Web UI)](https://dckiller51.github.io/astrion-ir-sniffer/)
 - [Astrion Custom Dashboard (Android app / APK)](https://github.com/dckiller51/astrion-custom-dashboard)
 - [HA Astrion Custom Dashboard (Custom component Home Assistant)](https://github.com/dckiller51/ha-astrion-custom-dashboard)
 
