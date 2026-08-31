@@ -1,0 +1,15 @@
+
+{
+  "categories": [
+    { "id": "ac", "label": "AC", "file": "ir-database/ac.json" },
+    { "id": "audio", "label": "Audio", "file": "ir-database/audio.json" },
+    { "id": "camera", "label": "Camera", "file": "ir-database/camera.json" },
+    { "id": "fan", "label": "Fan", "file": "ir-database/fan.json" },
+    { "id": "lights", "label": "Lights", "file": "ir-database/lights.json" },
+    { "id": "player", "label": "Player", "file": "ir-database/player.json" },
+    { "id": "plug", "label": "Plug", "file": "ir-database/plug.json" },
+    { "id": "robot", "label": "Robot", "file": "ir-database/robot.json" },
+    { "id": "set-top-box", "label": "Set-Top Box", "file": "ir-database/set-top-box.json" },
+    { "id": "tv", "label": "TV", "file": "ir-database/tv.json" }
+  ]
+}
