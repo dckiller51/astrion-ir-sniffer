@@ -123,11 +123,39 @@ Whichever mode you used, the result lands in the visual form/JSON editor
 `ir-database/<category>.json` shape) or "Submit to Astrion (GitHub)" to
 open a pre-filled comment on the project's pinned IR-database issue.
 
+## 🌐 Step 4: Online Database Selector (Web UI)
+
+If you just want to select and download existing infrared device databases without running the full Docker capture tool, you can use the official online selector:
+
+👉 **[Astrion IR Database Selector (Online)](https://dckiller51.github.io/astrion-ir-sniffer/)**
+
+* **Browse & Filter:** Easily search through available brands and models across different categories.
+* **Generate Files:** Check the devices you own and click **"Generate files"** to download the corresponding JSON files ready to copy into `/sdcard/astrion/ir-database/` on your remote.
+* **⚠️ Direct Send Limitation on GitHub Pages:** Because the online web UI is hosted on GitHub Pages (`HTTPS`) and your remote operates on your local network (`HTTP`), modern browsers block direct requests (Mixed Content restriction). Therefore, the **"Send to my remote..."** button is automatically disabled on the online version.
+
+### Running the Selector Locally (to enable direct send)
+
+Since the standalone selector is located in the `docs/` folder, you can run it locally on your machine to bypass HTTPS restrictions and use the direct send feature:
+
+1. Open a terminal and navigate into the `docs` directory:
+
+   ```bash
+   cd docs
+   ```
+
+2. Run a simple local HTTP server (requires [Node.js](https://nodejs.org/)):
+
+   ```bash
+   npx http-server . -p 8080
+   ```
+
+3. Open your browser and navigate to <http://localhost:8080>. Since it runs over HTTP, the browser will allow direct communication with your remote's local IP server, enabling the "Send to my remote..." button
+
 ## Useful links
 
-- [Astrion IR Database Selector (Web UI)](https://dckiller51.github.io/astrion-ir-sniffer/)
-- [Astrion Custom Dashboard (Android app / APK)](https://github.com/dckiller51/astrion-custom-dashboard)
-- [HA Astrion Custom Dashboard (Custom component Home Assistant)](https://github.com/dckiller51/ha-astrion-custom-dashboard)
+* [Astrion IR Database Selector (Web UI)](https://dckiller51.github.io/astrion-ir-sniffer/)
+* [Astrion Custom Dashboard (Android app / APK)](https://github.com/dckiller51/astrion-custom-dashboard)
+* [HA Astrion Custom Dashboard (Custom component Home Assistant)](https://github.com/dckiller51/ha-astrion-custom-dashboard)
 
 ## ☕ Support
 
