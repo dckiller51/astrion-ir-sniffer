@@ -301,7 +301,7 @@
     cursor: not-allowed;
   }
   .btn-generate:not(:disabled):hover{ filter: brightness(1.08); }
-    .btn-save-direct{
+  .btn-save-direct{
     background: none;
     color: var(--signal);
     border: 1px solid var(--signal-dim);
@@ -395,7 +395,10 @@
   <div class="selection-summary" id="selectionSummary" data-i18n="summary_none">No device selected</div>
   <div class="actions">
     <button class="btn-clear" id="clearAllBtn" data-i18n="btn_clear_all">Clear all</button>
-    <button class="btn-save-direct" id="sendRemoteBtn" data-i18n="btn_send_remote" disabled>Send to my remote…</button>
+    <div style="display:flex; flex-direction:column; align-items:flex-end;">
+      <button class="btn-save-direct" id="sendRemoteBtn" data-i18n="btn_send_remote" disabled>Send to my remote…</button>
+      <div id="remoteHint" style="font-size: 0.72rem; color: var(--text-faint); margin-top: 3px; display: none;" data-i18n="remote_disabled_hint">Only available in local run (HTTPS restricts local HTTP)</div>
+    </div>
     <button class="btn-save-direct" id="saveDirectBtn" data-i18n="btn_save_direct" disabled style="display:none">Save to a folder…</button>
     <button class="btn-generate" id="generateBtn" data-i18n="btn_generate" disabled>Generate files</button>
   </div>
@@ -414,9 +417,10 @@
       btn_deselect_all: "Deselect all (category)",
       btn_clear_all: "Clear all",
       btn_generate: "Generate files",
-            btn_save_direct: "Save to a folder…",
+      btn_save_direct: "Save to a folder…",
       btn_send_remote: "Send to my remote…",
-      remote_ip_prompt: "IP address of your Astrion remote (Settings → Wi-Fi shows it), e.g. 192.168.1.100:",
+      remote_disabled_hint: "Available in local run only (HTTPS blocks local HTTP)",
+      remote_ip_prompt: "IP address of your Astrion remote (Settings → Wi-Fi shows it), e.g. 192.168.1.100:8080",
       status_sending_remote: "Sending {n} file(s) to {ip}…",
       status_sent_remote: "Sent {n} file(s) to the remote — picked up immediately, no restart needed.",
       status_send_remote_blocked: "Blocked by the browser ({error}) — likely mixed-content protection, since this page is HTTPS and the remote's local server is plain HTTP. Try \"Generate files\" and copy them over instead.",
@@ -446,7 +450,8 @@
       btn_generate: "Générer les fichiers",
       btn_save_direct: "Enregistrer dans un dossier…",
       btn_send_remote: "Envoyer vers ma télécommande…",
-      remote_ip_prompt: "Adresse IP de votre télécommande Astrion (Paramètres → Wi-Fi l'affiche), ex. 192.168.1.100 :",
+      remote_disabled_hint: "Disponible uniquement en local (HTTPS bloque le HTTP local)",
+      remote_ip_prompt: "Adresse IP de votre télécommande Astrion (Paramètres → Wi-Fi l'affiche), ex. 192.168.1.100:8080 :",
       status_sending_remote: "Envoi de {n} fichier(s) vers {ip}…",
       status_sent_remote: "{n} fichier(s) envoyé(s) à la télécommande — pris en compte immédiatement, pas besoin de redémarrer.",
       status_send_remote_blocked: "Bloqué par le navigateur ({error}) — probablement la protection contenu-mixte, cette page étant en HTTPS et le serveur local de la télécommande en HTTP simple. Utilisez « Générer les fichiers » et copiez-les à la place.",
@@ -500,6 +505,17 @@
     });
     document.getElementById('btn-en').classList.toggle('active', lang === 'en');
     document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
+    
+    // If disabled via GitHub Pages, re-apply the translated text to the tooltip
+    if (window.location.hostname.includes('github.io')) {
+      const sendRemoteBtn = document.getElementById('sendRemoteBtn');
+      if (sendRemoteBtn) {
+        sendRemoteBtn.title = currentLang === 'fr' 
+          ? "Fonction disponible uniquement en local (le HTTPS de GitHub Pages bloque les requêtes HTTP vers le réseau local)."
+          : "Available in local run only (GitHub Pages HTTPS blocks HTTP requests to local network).";
+      }
+    }
+
     // Re-render everything built dynamically in JS (category nav labels
     // come from the user's own index.json and stay as-is — only this
     // tool's own chrome, all routed through t(), needs a re-render).
@@ -699,7 +715,9 @@
       : t('summary_n', {n: total});
     generateBtn.disabled = total === 0;
     saveDirectBtn.disabled = total === 0;
-    sendRemoteBtn.disabled = total === 0;
+    
+    const isGitHubPages = window.location.hostname.includes('github.io');
+    sendRemoteBtn.disabled = total === 0 || isGitHubPages;
   }
 
   // ---- category loading & selection ------------------------------
@@ -943,6 +961,15 @@
           selected: new Map()
         });
       });
+
+      // Specific handling for GitHub Pages: grey out the remote button and display the hint
+      if (window.location.hostname.includes('github.io')) {
+        sendRemoteBtn.style.opacity = '0.5';
+        sendRemoteBtn.title = currentLang === 'fr' 
+          ? "Fonction disponible uniquement en local (le HTTPS de GitHub Pages bloque les requêtes HTTP vers le réseau local)."
+          : "Available in local run only (GitHub Pages HTTPS blocks HTTP requests to local network).";
+        document.getElementById('remoteHint').style.display = 'block';
+      }
 
       renderCategoryNav();
       tree.innerHTML = '<div class="empty-state">' + t('choose_category') + '</div>';
