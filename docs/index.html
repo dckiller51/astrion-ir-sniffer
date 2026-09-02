@@ -301,6 +301,23 @@
     cursor: not-allowed;
   }
   .btn-generate:not(:disabled):hover{ filter: brightness(1.08); }
+  .btn-save-direct{
+    background: none;
+    color: var(--signal);
+    border: 1px solid var(--signal-dim);
+    border-radius: 6px;
+    padding: 9px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--sans);
+  }
+  .btn-save-direct:disabled{
+    color: var(--text-faint);
+    border-color: var(--border);
+    cursor: not-allowed;
+  }
+  .btn-save-direct:not(:disabled):hover{ background: var(--panel-2); }
   .btn-clear{
     background: none;
     border: none;
@@ -378,6 +395,8 @@
   <div class="selection-summary" id="selectionSummary" data-i18n="summary_none">No device selected</div>
   <div class="actions">
     <button class="btn-clear" id="clearAllBtn" data-i18n="btn_clear_all">Clear all</button>
+    <button class="btn-save-direct" id="sendRemoteBtn" data-i18n="btn_send_remote" disabled>Send to my remote…</button>
+    <button class="btn-save-direct" id="saveDirectBtn" data-i18n="btn_save_direct" disabled style="display:none">Save to a folder…</button>
     <button class="btn-generate" id="generateBtn" data-i18n="btn_generate" disabled>Generate files</button>
   </div>
 </footer>
@@ -395,6 +414,12 @@
       btn_deselect_all: "Deselect all (category)",
       btn_clear_all: "Clear all",
       btn_generate: "Generate files",
+      btn_save_direct: "Save to a folder…",
+      btn_send_remote: "Send to my remote…",
+      remote_ip_prompt: "IP address of your Astrion remote (Settings → Wi-Fi shows it), e.g. 192.168.2.175:",
+      status_sending_remote: "Sending {n} file(s) to {ip}…",
+      status_sent_remote: "Sent {n} file(s) to the remote — picked up immediately, no restart needed.",
+      status_send_remote_blocked: "Blocked by the browser ({error}) — likely mixed-content protection, since this page is HTTPS and the remote's local server is plain HTTP. Try \"Generate files\" and copy them over instead.",
       summary_none: "No device selected",
       summary_n: "<strong>{n}</strong> device selected|<strong>{n}</strong> devices selected",
       choose_category: "Choose a category on the left.",
@@ -405,7 +430,11 @@
       index_load_error: 'Couldn\'t load index.json. This page must be served over http(s) (GitHub Pages, or <code>npx http-server</code> locally) — it won\'t work opened directly as a local file (file://).',
       cmd_count: "{n} cmd",
       status_generating: "Generating {n} file(s)…",
-      status_done: "{n} file(s) downloaded — copy them to /sdcard/astrion/ir-database/ on the remote."
+      status_done: "{n} file(s) downloaded — copy them to /sdcard/astrion/ir-database/ on the remote.",
+      status_saving_direct: "Saving {n} file(s) to the folder you picked…",
+      status_saved_direct: "Saved {n} file(s) directly to \"{folder}/ir-database/\".",
+      status_save_direct_cancelled: "Cancelled — nothing was saved.",
+      status_save_direct_error: "Couldn't save directly ({error}) — use \"Generate files\" to download instead."
     },
     fr: {
       title: "Astrion IR Database",
@@ -415,6 +444,12 @@
       btn_deselect_all: "Tout décocher (catégorie)",
       btn_clear_all: "Tout effacer",
       btn_generate: "Générer les fichiers",
+      btn_save_direct: "Enregistrer dans un dossier…",
+      btn_send_remote: "Envoyer vers ma télécommande…",
+      remote_ip_prompt: "Adresse IP de votre télécommande Astrion (Paramètres → Wi-Fi l'affiche), ex. 192.168.2.175 :",
+      status_sending_remote: "Envoi de {n} fichier(s) vers {ip}…",
+      status_sent_remote: "{n} fichier(s) envoyé(s) à la télécommande — pris en compte immédiatement, pas besoin de redémarrer.",
+      status_send_remote_blocked: "Bloqué par le navigateur ({error}) — probablement la protection contenu-mixte, cette page étant en HTTPS et le serveur local de la télécommande en HTTP simple. Utilisez « Générer les fichiers » et copiez-les à la place.",
       summary_none: "Aucun appareil sélectionné",
       summary_n: "<strong>{n}</strong> appareil sélectionné|<strong>{n}</strong> appareils sélectionnés",
       choose_category: "Choisissez une catégorie à gauche.",
@@ -425,7 +460,11 @@
       index_load_error: "Impossible de charger index.json. Cette page doit être servie en http(s) (GitHub Pages, ou <code>npx http-server</code> en local) — elle ne fonctionne pas ouverte directement en fichier local (file://).",
       cmd_count: "{n} cmd",
       status_generating: "Génération de {n} fichier(s)…",
-      status_done: "{n} fichier(s) téléchargé(s) — copiez-les dans /sdcard/astrion/ir-database/ sur la télécommande."
+      status_done: "{n} fichier(s) téléchargé(s) — copiez-les dans /sdcard/astrion/ir-database/ sur la télécommande.",
+      status_saving_direct: "Enregistrement de {n} fichier(s) dans le dossier choisi…",
+      status_saved_direct: "{n} fichier(s) enregistré(s) directement dans « {folder}/ir-database/ ».",
+      status_save_direct_cancelled: "Annulé — rien n'a été enregistré.",
+      status_save_direct_error: "Échec de l'enregistrement direct ({error}) — utilisez « Générer les fichiers » pour télécharger à la place."
     }
   };
 
@@ -482,6 +521,8 @@
   const deselectAllBtn = document.getElementById('deselectAllBtn');
   const clearAllBtn = document.getElementById('clearAllBtn');
   const generateBtn = document.getElementById('generateBtn');
+  const saveDirectBtn = document.getElementById('saveDirectBtn');
+  const sendRemoteBtn = document.getElementById('sendRemoteBtn');
   const selectionSummary = document.getElementById('selectionSummary');
   const statusLine = document.getElementById('statusLine');
 
@@ -537,22 +578,12 @@
     categoryNav.innerHTML = '';
     categories.forEach((cat, id) => {
       const btn = document.createElement('button');
-      const selectedCount = categorySelectionCount(id);
-      
-      let totalAvailable = 0;
-      if (cat.data && cat.data.brands) {
-        cat.data.brands.forEach(brand => {
-          if (brand.models) totalAvailable += brand.models.length;
-        });
-      }
-
+      const count = categorySelectionCount(id);
       if (id === activeCategoryId) btn.classList.add('active');
-      if (selectedCount > 0) btn.classList.add('has-selection');
-      
+      if (count > 0) btn.classList.add('has-selection');
       btn.innerHTML =
         '<span class="cat-label">' + escapeHtml(cat.label) + '</span>' +
-        '<span class="cat-count">' + (cat.data ? selectedCount + '/' + totalAvailable : selectedCount) + '</span>';
-      
+        '<span class="cat-count">' + count + '</span>';
       btn.addEventListener('click', () => selectCategory(id));
       categoryNav.appendChild(btn);
     });
@@ -657,6 +688,8 @@
       ? t('summary_none')
       : t('summary_n', {n: total});
     generateBtn.disabled = total === 0;
+    saveDirectBtn.disabled = total === 0;
+    sendRemoteBtn.disabled = total === 0;
   }
 
   // ---- category loading & selection ------------------------------
@@ -672,8 +705,7 @@
       renderCategoryNav();
       renderTree();
       try{
-        const prefix = window.location.hostname.includes('github.io') ? window.location.pathname.replace(/\/[^/]*$/, '/') : '';
-        const res = await fetch(prefix + cat.file);
+        const res = await fetch(cat.file);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         cat.data = await res.json();
       } catch(err){
@@ -743,7 +775,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = filename.split('/').pop();
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -779,6 +811,112 @@
     statusLine.textContent = t('status_done', {n: toExport.length});
   });
 
+  // ---- direct save via the File System Access API (Chromium desktop; ----
+  // ---- Android support is new and known to have bugs around creating -----
+  // ---- new files/folders, so this stays a bonus, not the only way in) ---
+  //
+  // Remembers the folder you picked (the `id` option below) so repeat use
+  // doesn't require re-navigating every time — the browser still asks for
+  // a one-tap confirmation on later uses, it just starts in the same
+  // place. Always writes into `<picked folder>/ir-database/`, creating
+  // that subfolder if it isn't there yet; point the picker at wherever you
+  // keep dashboard.json (usually a folder named "astrion").
+  if ('showDirectoryPicker' in window){
+    saveDirectBtn.style.display = '';
+  }
+
+  saveDirectBtn.addEventListener('click', async () => {
+    const toExport = [];
+    categories.forEach((cat, id) => {
+      if (categorySelectionCount(id) > 0) toExport.push(id);
+    });
+    if (!toExport.length) return;
+
+    let rootHandle;
+    try{
+      rootHandle = await window.showDirectoryPicker({ id: 'astrion-ir-database', mode: 'readwrite' });
+    } catch(err){
+      if (err.name === 'AbortError'){ statusLine.textContent = t('status_save_direct_cancelled'); return; }
+      statusLine.textContent = t('status_save_direct_error', {error: err.message || err.name});
+      console.error(err);
+      return;
+    }
+
+    statusLine.textContent = t('status_saving_direct', {n: toExport.length});
+
+    try{
+      const dbHandle = await rootHandle.getDirectoryHandle('ir-database', { create: true });
+      for (const id of toExport){
+        const cat = categories.get(id);
+        if (!cat.data) continue;
+        const exported = buildCategoryExport(id);
+        if (!exported) continue;
+        const fileHandle = await dbHandle.getFileHandle(cat.file, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(JSON.stringify(exported, null, 2));
+        await writable.close();
+      }
+      statusLine.textContent = t('status_saved_direct', { n: toExport.length, folder: rootHandle.name });
+    } catch(err){
+      statusLine.textContent = t('status_save_direct_error', {error: err.message || err.name});
+      console.error(err);
+    }
+  });
+
+  // ---- direct send to the remote's own local server (POST /ir-database) ---
+  //
+  // Same idea as icon uploads in the on-device web builder, just reached
+  // over the LAN instead of from a page the remote serves itself — which
+  // is exactly the catch: this page is HTTPS (GitHub Pages) and the
+  // remote's ConfigServer is plain HTTP, so most browsers block this by
+  // default as mixed content. Chrome is rolling out a "Local Network
+  // Access" permission that's meant to allow exactly this, staged through
+  // 2026 — so this may just start working over time without any change
+  // here. Until then, it fails fast with an explanatory status message;
+  // "Generate files" (copy to /sdcard/astrion/ir-database/ by hand) always
+  // works regardless of any of this.
+
+  function rememberedRemoteIp(){
+    return localStorage.getItem('astrion_remote_ip') || '';
+  }
+
+  sendRemoteBtn.addEventListener('click', async () => {
+    const toExport = [];
+    categories.forEach((cat, id) => {
+      if (categorySelectionCount(id) > 0) toExport.push(id);
+    });
+    if (!toExport.length) return;
+
+    const ip = prompt(t('remote_ip_prompt'), rememberedRemoteIp());
+    if (!ip) return;
+    const base = ip.includes(':') ? ip : ip + ':8080';
+    localStorage.setItem('astrion_remote_ip', ip);
+
+    statusLine.textContent = t('status_sending_remote', {n: toExport.length, ip: base});
+
+    try{
+      for (const id of toExport){
+        const cat = categories.get(id);
+        if (!cat.data) continue;
+        const exported = buildCategoryExport(id);
+        if (!exported) continue;
+        const blob = new Blob([JSON.stringify(exported, null, 2)], {type: 'application/json'});
+        const form = new FormData();
+        form.append('file', blob, cat.file);
+        const res = await fetch(`http://${base}/ir-database`, {
+          method: 'POST',
+          headers: {'Accept': 'application/json'},
+          body: form
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status} (${(await res.text()).slice(0, 200)})`);
+      }
+      statusLine.textContent = t('status_sent_remote', {n: toExport.length});
+    } catch(err){
+      statusLine.textContent = t('status_send_remote_blocked', {error: err.message || String(err)});
+      console.error(err);
+    }
+  });
+
   // ---- boot -----------------------------------------------------------
 
   async function init(){
@@ -786,7 +924,6 @@
       const res = await fetch('index.json');
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const idx = await res.json();
-      
       (idx.categories || []).forEach(c => {
         categories.set(c.id, {
           label: c.label, file: c.file,
@@ -794,24 +931,9 @@
           selected: new Map()
         });
       });
-
       renderCategoryNav();
       tree.innerHTML = '<div class="empty-state">' + t('choose_category') + '</div>';
       refreshChrome();
-
-      categories.forEach(async (cat, id) => {
-        try {
-          const prefix = window.location.hostname.includes('github.io') ? window.location.pathname.replace(/\/[^/]*$/, '/') : '';
-          const catRes = await fetch(prefix + cat.file);
-          if (catRes.ok) {
-            cat.data = await catRes.json();
-            renderCategoryNav();
-          }
-        } catch (err) {
-          console.error('Erreur de préchargement pour ' + cat.file, err);
-        }
-      });
-
     } catch(err){
       tree.innerHTML = '<div class="empty-state">' + t('index_load_error') + '</div>';
       console.error(err);
