@@ -17,9 +17,7 @@ Astrion's `ir-database/`. Two capture modes:
 ## 📋 Prerequisites
 
 * Docker Desktop installed and running.
-* An ESPHome device (ESP8285/ESP32) on the same local network. A Harmony
-  Hub is only needed for the bulk-export mode — Learning Mode works
-  without one.
+* An ESPHome device (ESP8285/ESP32) on the same local network (ESP8285 hardware also successfully tested once flashed with ESPHome `Tasmota MQTT IR remote ESP8285`). A Harmony Hub is only needed for the bulk-export mode — Learning Mode works without one.
 * The local IP addresses of the devices you're using.
 * This project's ESPHome config, `esphome/astrion-ir-sniffer.yaml`,
   flashed onto your ESP device AND present at that same path inside the
