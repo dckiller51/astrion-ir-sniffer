@@ -301,7 +301,7 @@
     cursor: not-allowed;
   }
   .btn-generate:not(:disabled):hover{ filter: brightness(1.08); }
-  .btn-save-direct{
+    .btn-save-direct{
     background: none;
     color: var(--signal);
     border: 1px solid var(--signal-dim);
@@ -414,9 +414,9 @@
       btn_deselect_all: "Deselect all (category)",
       btn_clear_all: "Clear all",
       btn_generate: "Generate files",
-      btn_save_direct: "Save to a folder…",
+            btn_save_direct: "Save to a folder…",
       btn_send_remote: "Send to my remote…",
-      remote_ip_prompt: "IP address of your Astrion remote (Settings → Wi-Fi shows it), e.g. 192.168.2.175:",
+      remote_ip_prompt: "IP address of your Astrion remote (Settings → Wi-Fi shows it), e.g. 192.168.1.100:",
       status_sending_remote: "Sending {n} file(s) to {ip}…",
       status_sent_remote: "Sent {n} file(s) to the remote — picked up immediately, no restart needed.",
       status_send_remote_blocked: "Blocked by the browser ({error}) — likely mixed-content protection, since this page is HTTPS and the remote's local server is plain HTTP. Try \"Generate files\" and copy them over instead.",
@@ -446,7 +446,7 @@
       btn_generate: "Générer les fichiers",
       btn_save_direct: "Enregistrer dans un dossier…",
       btn_send_remote: "Envoyer vers ma télécommande…",
-      remote_ip_prompt: "Adresse IP de votre télécommande Astrion (Paramètres → Wi-Fi l'affiche), ex. 192.168.2.175 :",
+      remote_ip_prompt: "Adresse IP de votre télécommande Astrion (Paramètres → Wi-Fi l'affiche), ex. 192.168.1.100 :",
       status_sending_remote: "Envoi de {n} fichier(s) vers {ip}…",
       status_sent_remote: "{n} fichier(s) envoyé(s) à la télécommande — pris en compte immédiatement, pas besoin de redémarrer.",
       status_send_remote_blocked: "Bloqué par le navigateur ({error}) — probablement la protection contenu-mixte, cette page étant en HTTPS et le serveur local de la télécommande en HTTP simple. Utilisez « Générer les fichiers » et copiez-les à la place.",
@@ -578,12 +578,22 @@
     categoryNav.innerHTML = '';
     categories.forEach((cat, id) => {
       const btn = document.createElement('button');
-      const count = categorySelectionCount(id);
+      const selectedCount = categorySelectionCount(id);
+      
+      let totalAvailable = 0;
+      if (cat.data && cat.data.brands) {
+        cat.data.brands.forEach(brand => {
+          if (brand.models) totalAvailable += brand.models.length;
+        });
+      }
+
       if (id === activeCategoryId) btn.classList.add('active');
-      if (count > 0) btn.classList.add('has-selection');
+      if (selectedCount > 0) btn.classList.add('has-selection');
+      
       btn.innerHTML =
         '<span class="cat-label">' + escapeHtml(cat.label) + '</span>' +
-        '<span class="cat-count">' + count + '</span>';
+        '<span class="cat-count">' + (cat.data ? selectedCount + '/' + totalAvailable : selectedCount) + '</span>';
+      
       btn.addEventListener('click', () => selectCategory(id));
       categoryNav.appendChild(btn);
     });
@@ -705,7 +715,8 @@
       renderCategoryNav();
       renderTree();
       try{
-        const res = await fetch(cat.file);
+        const prefix = window.location.hostname.includes('github.io') ? window.location.pathname.replace(/\/[^/]*$/, '/') : '';
+        const res = await fetch(prefix + cat.file);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         cat.data = await res.json();
       } catch(err){
@@ -775,7 +786,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = filename;
+    a.download = filename.split('/').pop();
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -924,6 +935,7 @@
       const res = await fetch('index.json');
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const idx = await res.json();
+      
       (idx.categories || []).forEach(c => {
         categories.set(c.id, {
           label: c.label, file: c.file,
@@ -931,9 +943,24 @@
           selected: new Map()
         });
       });
+
       renderCategoryNav();
       tree.innerHTML = '<div class="empty-state">' + t('choose_category') + '</div>';
       refreshChrome();
+
+      categories.forEach(async (cat, id) => {
+        try {
+          const prefix = window.location.hostname.includes('github.io') ? window.location.pathname.replace(/\/[^/]*$/, '/') : '';
+          const catRes = await fetch(prefix + cat.file);
+          if (catRes.ok) {
+            cat.data = await catRes.json();
+            renderCategoryNav();
+          }
+        } catch (err) {
+          console.error('Erreur de préchargement pour ' + cat.file, err);
+        }
+      });
+
     } catch(err){
       tree.innerHTML = '<div class="empty-state">' + t('index_load_error') + '</div>';
       console.error(err);
