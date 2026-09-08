@@ -152,9 +152,27 @@ PROGRESS_FILE = "export_telecommandes_partial.json"
 FINAL_FILE = "export_telecommandes.json"
 
 
+def _real_command(cmd):
+    """The Harmony hub's own IR command can differ from cmd['name']/cmd['label']
+    on some device profiles -- those are just display labels. The real command
+    the hub expects to trigger this IR is nested inside cmd['action'] (a
+    stringified JSON), e.g. a button named "Select" whose actual command is
+    "OK". Falls back to cmd['name'] if 'action' is missing or malformed."""
+    action_raw = cmd.get("action")
+    if action_raw:
+        try:
+            parsed = json.loads(action_raw)
+            real_command = parsed.get("command")
+            if real_command:
+                return real_command
+        except (json.JSONDecodeError, TypeError):
+            pass
+    return cmd.get("name")
+
+
 def send_harmony_cmd(harmony_ip, device_id, command_name, retries=3):
     """Sends a command to Harmony Hub with auto-retry logic on failure."""
-    for attempt in range(retries):
+    for _attempt in range(retries):
         try:
             res = subprocess.run(
                 [
@@ -218,8 +236,7 @@ def fetch_devices():
                     "manufacturer": dev.get("manufacturer"),
                     "model": dev.get("model"),
                     "commands_count": sum(
-                        len(g.get("function", []))
-                        for g in dev.get("controlGroup", [])
+                        len(g.get("function", [])) for g in dev.get("controlGroup", [])
                     ),
                 }
             )
@@ -256,8 +273,8 @@ def start_capture():
                             "device_label": dev.get("label"),
                             "manufacturer": dev.get("manufacturer", ""),
                             "model": dev.get("model", ""),
-                            "cmd_name": cmd.get("name"),
-                            "cmd_label": cmd.get("label"),
+                            "cmd_name": _real_command(cmd),
+                            "cmd_label": cmd.get("label", cmd.get("name")),
                         }
                     )
 
@@ -298,15 +315,16 @@ def run_capture_process(harmony_ip, esp_ip, targets, yaml_path=None):
 
     for i, target in enumerate(targets):
         capture_status["progress"] = i + 1
-        capture_status["current_command"] = (
-            f"{target['device_label']} - {target['cmd_label']}"
-        )
+        capture_status["current_command"] = f"{target['device_label']} - {target['cmd_label']}"
 
         dev_key = f"{target['manufacturer']}_{target['model']}".replace(" ", "_")
 
-        if dev_key in results and target["cmd_name"] in results[dev_key].get("commands", {}):
-            if results[dev_key]["commands"][target["cmd_name"]].get("pronto"):
-                continue
+        if (
+            dev_key in results
+            and target["cmd_name"] in results[dev_key].get("commands", {})
+            and results[dev_key]["commands"][target["cmd_name"]].get("pronto")
+        ):
+            continue
 
         listener.drain()
         send_harmony_cmd(harmony_ip, target["device_id"], target["cmd_name"])
@@ -388,7 +406,9 @@ def learn_connect():
         _learn_listener.start()
         time.sleep(3)  # let `esphome logs` finish attaching before we listen
 
-    return jsonify({"status": "connected", "esp_ip": esp_ip, "yaml_path": _learn_listener.yaml_file})
+    return jsonify(
+        {"status": "connected", "esp_ip": esp_ip, "yaml_path": _learn_listener.yaml_file}
+    )
 
 
 @app.route("/api/learn/capture", methods=["POST"])
@@ -408,7 +428,11 @@ def learn_capture():
     pronto, pronto_repeat = parse_pronto_capture(raw_text)
 
     if not pronto:
-        return jsonify({"error": "No IR signal detected in time — point the remote at the receiver and try again"}), 408
+        return jsonify(
+            {
+                "error": "No IR signal detected in time — point the remote at the receiver and try again"
+            }
+        ), 408
 
     return jsonify({"pronto": pronto, "pronto_repeat": pronto_repeat})
 
@@ -432,7 +456,9 @@ def learn_test():
             services = (await client.list_entities_services())[1]
             svc = next((s for s in services if s.name == "send_pronto"), None)
             if svc is None:
-                raise RuntimeError("Device has no 'send_pronto' service — flash the updated harmony-2-esphome.yaml")
+                raise RuntimeError(
+                    "Device has no 'send_pronto' service — flash the updated harmony-2-esphome.yaml"
+                )
             client.execute_service(svc, {"code": pronto})
         finally:
             await client.disconnect()
