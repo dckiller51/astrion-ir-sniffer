@@ -7,7 +7,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **Player**: Added **LG UBK90** model (contributed by [@neturmel](https://github.com)).
+- **Player**: Added **LG UBK90** model (contributed by [@neturmel](https://github.com/neturmel)).
 
 ## [0.2.0] 2026-09-08
 
