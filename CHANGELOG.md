@@ -3,6 +3,12 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] 2026-xx-xx
+
+### Added
+
+- **Player**: Added **LG UBK90** model (contributed by @neturmel).
+
 ## [0.2.0] 2026-09-08
 
 ### Fixed
