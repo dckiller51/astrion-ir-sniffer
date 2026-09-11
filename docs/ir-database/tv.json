@@ -673,6 +673,496 @@
       ]
     },
     {
+      "brand_name": "Philips",
+      "models": [
+        {
+          "model_name": "55OLED805",
+          "commands": {
+            "0": {
+              "label": "0",
+              "pronto": "0000 0063 0024 000F 0025 0010 0015 000F 0015 000F 0025 001E 0015 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0016",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "1": {
+              "label": "1",
+              "pronto": "0000 0064 0024 0010 0025 0010 0015 000F 0015 0030 0035 000F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 000E 0014 001F 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "2": {
+              "label": "2",
+              "pronto": "0000 0063 0025 000F 0025 0010 0015 000F 0015 000F 0025 001E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0026 000E 0181",
+              "pronto_repeat": "0000 006D 0015",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "3": {
+              "label": "3",
+              "pronto": "0000 0064 0024 0010 0026 000F 0015 000F 0015 0030 0035 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "4": {
+              "label": "4",
+              "pronto": "0000 0064 0025 000F 0025 0010 0015 000F 0015 000F 0024 001E 0015 000E 0014 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 001F 0025 000F 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0015",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "5": {
+              "label": "5",
+              "pronto": "0000 0063 0024 0010 0025 0010 0014 000F 0014 0031 0035 000F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0026 001F 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "6": {
+              "label": "6",
+              "pronto": "0000 0064 0023 0010 0026 000F 0015 000F 0015 000F 0023 001F 0015 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 000E 0015 000E 0014 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0015 000E 0026 000E 0181",
+              "pronto_repeat": "0000 006D 0015",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "7": {
+              "label": "7",
+              "pronto": "0000 0064 0023 0010 0025 0010 0015 000F 0014 0030 0036 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "8": {
+              "label": "8",
+              "pronto": "0000 0063 0025 000F 0026 000F 0015 000F 0015 000F 0024 001F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 001F 0025 000E 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0015",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "9": {
+              "label": "9",
+              "pronto": "0000 0063 0023 0010 0026 000F 0015 000F 0015 0030 0035 000F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0025 000F 0015 001F 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "ambilight": {
+              "label": "Ambilight",
+              "pronto": "0000 0064 0024 0010 0025 0010 0014 000F 0014 0030 0035 000F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 001F 0025 000F 0015 000E 0015 001F 0015 000E 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "back": {
+              "label": "Back",
+              "pronto": "0000 0063 0023 0010 0025 0010 0015 000F 0015 0030 0035 000F 0015 000E 0015 000E 0016 000D 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0026 001F 0026 000E 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "blue": {
+              "label": "Blue",
+              "pronto": "0000 0063 0024 0010 0026 000F 0015 000F 0015 000F 0025 001E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0015 000E 0015 000E 0025 000F 0015 000E 0014 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0015",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "channel_down": {
+              "label": "Channel Down",
+              "pronto": "0000 0064 0025 000F 0026 000F 0015 000F 0015 000F 0024 001F 0014 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 001F 0026 000E 0015 000E 0015 000E 0015 001F 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "channel_prev": {
+              "label": "Prev Channel",
+              "pronto": "0000 0063 0024 0010 0025 0010 0015 000F 0015 0030 0036 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 000E 0014 000E 0015 000E 0015 000E 0015 000E 0015 001F 0026 001F 0026 000E 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "channel_up": {
+              "label": "Channel Up",
+              "pronto": "0000 0063 0023 0010 0026 000F 0015 000F 0015 0030 0036 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0025 000E 0015 000E 0015 000E 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "direction_down": {
+              "label": "Direction Down",
+              "pronto": "0000 0063 0024 0010 0026 000F 0015 000F 0015 000F 0025 001E 0015 000D 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 001F 0026 001F 0015 000E 0025 000F 0015 001F 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "direction_left": {
+              "label": "Direction Left",
+              "pronto": "0000 0064 0024 000F 0025 0010 0015 000F 0015 0030 0035 000F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0026 001F 0015 000E 0026 001F 0026 000E 0181",
+              "pronto_repeat": "0000 006D 0012",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "direction_right": {
+              "label": "Direction Right",
+              "pronto": "0000 0063 0024 0010 0026 000F 0015 000F 0015 000F 0024 001F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000D 0015 000E 0015 000E 0015 000E 0015 001F 0025 0020 0015 000E 0026 001F 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "direction_up": {
+              "label": "Direction Up",
+              "pronto": "0000 0064 0024 0010 0025 0010 0015 000F 0015 0030 0036 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 000E 0015 001F 0025 0020 0015 000E 0025 000F 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "exit": {
+              "label": "Exit",
+              "pronto": "0000 0064 0024 0010 0025 0010 0015 000F 0015 000F 0024 001F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0025 000E 0015 001F 0015 000E 0015 000E 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "fast_forward": {
+              "label": "Fast Forward",
+              "pronto": "0000 0064 0023 0010 0025 0010 0015 000F 0015 0030 0036 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 001F 0026 001F 0025 000F 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "google_play": {
+              "label": "GooglePlay",
+              "pronto": "0000 0064 0025 000F 0025 0010 0015 000F 0015 000F 0024 001F 0014 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0026 000E 0014 001F 0015 000E 0015 000E 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "green": {
+              "label": "Green",
+              "pronto": "0000 0063 0024 000F 0026 000F 0015 000F 0015 000F 0024 001F 0014 000E 0015 000E 0015 000E 0015 000D 0015 000E 0015 000E 0014 000E 0015 000E 0015 001F 0015 000E 0026 001F 0015 000E 0015 000E 0026 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "guide": {
+              "label": "Guide",
+              "pronto": "0000 0063 0024 0010 0025 0010 0015 000F 0015 000F 0023 001F 0015 000E 0015 000E 0015 000E 0014 000E 0015 000E 0015 000E 0015 000E 0015 001F 0015 000E 0026 000E 0015 001F 0015 000E 0025 000F 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "home": {
+              "label": "Home",
+              "pronto": "0000 0063 0025 000F 0025 0010 0015 000F 0015 0030 0036 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 000E 0015 000E 0015 001F 0026 001F 0026 001F 0026 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0012",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "info": {
+              "label": "Info",
+              "pronto": "0000 0063 0024 0010 0025 0010 0014 000F 0015 0030 0035 000F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 001F 0015 000E 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "input_hdmi1": {
+              "label": "InputHdmi1",
+              "pronto": "0000 0020 0026 0041 0026 001F 0025 0020 0025 0020 0048 001F 0026 0041 0025 0020 0025 0020 0047 0020 0025 0042 0181",
+              "pronto_repeat": "0000 006D 000B",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "input_hdmi2": {
+              "label": "InputHdmi2",
+              "pronto": "0000 001F 0026 001F 0025 0042 0026 001F 0026 001F 0047 0020 0026 0041 0026 001F 0026 001F 0047 0042 0025 0020 0181",
+              "pronto_repeat": "0000 006D 000B",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "input_hdmi3": {
+              "label": "InputHdmi3",
+              "pronto": "0000 0020 0025 0042 0026 001F 0026 001F 0026 001F 0047 0020 0025 0042 0025 0020 0048 0041 0026 001F 0025 0020 0181",
+              "pronto_repeat": "0000 006D 000B",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "input_hdmi4": {
+              "label": "InputHdmi4",
+              "pronto": "0000 001F 0026 001F 0025 0042 0025 0020 0025 0020 0047 0020 0026 001F 0025 0020 0026 001F 0025 0042 0024 0020 0048 001F 0181",
+              "pronto_repeat": "0000 006D 000C",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "input_y_pb_pr": {
+              "label": "InputYPbPr",
+              "pronto": "0000 001F 0025 0042 0024 0020 0024 0020 0026 001F 0025 0020 0026 001F 0047 0020 0025 0020 0025 0042 0026 001F 0047 0020 0181",
+              "pronto_repeat": "0000 006D 000C",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "menu": {
+              "label": "Menu",
+              "pronto": "0000 0064 0023 0010 0026 000F 0015 000F 0015 0030 0036 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0025 0020 0026 001F 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0012",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "multiview": {
+              "label": "Multiview",
+              "pronto": "0000 0064 0023 0010 0025 0010 0015 000F 0015 000F 0024 001F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0025 0020 0015 000E 0015 000E 0025 0020 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "mute": {
+              "label": "Mute",
+              "pronto": "0000 0064 0024 0010 0026 000F 0015 000F 0015 000F 0024 001F 0015 000E 0015 000E 0014 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0015 000E 0025 0020 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "netflix": {
+              "label": "Netflix",
+              "pronto": "0000 0064 0024 0010 0025 0010 0015 000F 0015 0030 0036 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0014 000E 0014 000E 0026 001F 0014 000E 0026 000E 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "ok": {
+              "label": "Select",
+              "pronto": "0000 0063 0024 0010 0024 0010 0015 000F 0015 000F 0025 001E 0014 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 001F 0026 001F 0015 000E 0015 000E 0026 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "options": {
+              "label": "Options",
+              "pronto": "0000 0064 0025 000F 0025 0010 0015 000F 0015 0030 0036 000E 0015 000E 0014 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0026 000E 0015 000E 0014 000E 0015 000E 0015 000E 0014 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "page_down": {
+              "label": "Page Down",
+              "pronto": "0000 0064 0025 000F 0026 000F 0015 000F 0015 000F 0025 001E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 001F 0025 000F 0015 000E 0015 000E 0015 001F 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "page_up": {
+              "label": "Page Up",
+              "pronto": "0000 0063 0025 000F 0026 000F 0015 000F 0015 0030 0036 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 000E 0015 000E 0015 001F 0026 000E 0015 000E 0015 000E 0014 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "pause": {
+              "label": "Pause",
+              "pronto": "0000 0063 0024 0010 0025 0010 0015 000F 0015 000F 0025 001E 0014 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0015 000E 0026 000E 0015 000E 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0015",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "play": {
+              "label": "Play",
+              "pronto": "0000 0063 0023 0010 0025 0010 0015 000F 0015 000F 0024 001E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 001F 0026 001F 0015 000E 0025 000F 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "power_off": {
+              "label": "Power Off",
+              "pronto": "0000 0020 0026 0041 0026 001F 0026 001F 0026 001F 0025 0020 0025 0020 0048 001F 0026 001F 0026 001F 0025 0042 0048 001F 0181",
+              "pronto_repeat": "0000 006D 000C",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "power_on": {
+              "label": "Power On",
+              "pronto": "0000 0020 0025 0020 0026 0041 0026 001F 0026 001F 0026 001F 0026 001F 0047 0020 0025 0020 0025 0020 0026 001F 0025 0020 0025 0020 0181",
+              "pronto_repeat": "0000 006D 000D",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "power_toggle": {
+              "label": "Power Toggle",
+              "pronto": "0000 0063 0024 0010 0025 0010 0015 000F 0015 0030 0036 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 000E 0015 001F 0015 000E 0025 000F 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "record": {
+              "label": "Record",
+              "pronto": "0000 0064 0023 0010 0025 0010 0015 000F 0015 000F 0024 001F 0014 000E 0015 000E 0015 000D 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0015 000E 0025 0020 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "red": {
+              "label": "Red",
+              "pronto": "0000 0064 0025 000F 0025 0010 0015 000F 0015 0030 0036 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0015 000E 0026 001F 0015 000E 0026 001F 0181",
+              "pronto_repeat": "0000 006D 0012",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "rewind": {
+              "label": "Rewind",
+              "pronto": "0000 0063 0023 0010 0025 0010 0015 000F 0015 0030 0035 000F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0025 0020 0025 0020 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0012",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "search": {
+              "label": "Search",
+              "pronto": "0000 0064 0024 0010 0025 0010 0015 000F 0015 0030 0036 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0025 0020 0015 000E 0025 0020 0025 000F 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0012",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "settings": {
+              "label": "Settings",
+              "pronto": "0000 0064 0024 000F 0026 000F 0014 000F 0015 000F 0025 001E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0014 000E 0015 001F 0025 0020 0014 000E 0015 000E 0015 000E 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "signal": {
+              "label": "Signal",
+              "pronto": "0000 0158 00AF 0014 0019 0013 0019 0013 0043 0013 0019 0013 0019 0013 0019 0013 0019 0013 0019 0013 0042 0014 0043 0013 0019 0013 0043 0013 0043 0013 0042 0014 0042 0014 0043 0013 0019 0013 0043 0013 0042 0014 0019 0013 0042 0014 0019 0013 0019 0013 0043 0013 0042 0014 0019 0013 0019 0013 0043 0013 0019 0013 0042 0014 0043 0013 0019 0013 0181",
+              "pronto_repeat": "0000 006D 0022",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "smart_menu": {
+              "label": "SmartMenu",
+              "pronto": "0000 0063 0024 0010 0025 0010 0015 000F 0015 000F 0024 001F 0014 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0026 001F 0026 001F 0026 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "source": {
+              "label": "Source",
+              "pronto": "0000 0064 0024 000F 0025 0010 0015 000F 0015 0030 0036 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0015 000E 0015 000E 0025 000F 0014 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "stop": {
+              "label": "Stop",
+              "pronto": "0000 0063 0023 0010 0026 000F 0015 000F 0015 0030 0035 000F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0015 000E 0026 000E 0015 000E 0015 001F 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "subtitle": {
+              "label": "Subtitle",
+              "pronto": "0000 0063 0023 0010 0026 000F 0015 000F 0015 000F 0024 001F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0025 000F 0015 001F 0025 0020 0014 000E 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "teletext": {
+              "label": "Teletext",
+              "pronto": "0000 0064 0025 000F 0025 0010 0015 000F 0015 000F 0024 001F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0015 000E 0015 000E 0015 000E 0025 000F 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0015",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "top_picks": {
+              "label": "TopPicks",
+              "pronto": "0000 0063 0024 0010 0025 0010 0015 000F 0015 000F 0024 001F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0015 000E 0015 000E 0025 0020 0026 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0014",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "volume_down": {
+              "label": "Volume Down",
+              "pronto": "0000 0063 0025 000F 0026 000F 0015 000F 0015 0030 0035 000F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0025 000F 0015 000E 0015 001F 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "volume_up": {
+              "label": "Volume Up",
+              "pronto": "0000 0064 0025 000F 0026 000F 0014 000F 0015 000F 0024 001F 0015 000E 0015 000E 0014 000E 0014 000F 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0026 000E 0015 000E 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0015",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            },
+            "yellow": {
+              "label": "Yellow",
+              "pronto": "0000 0064 0025 000F 0025 0010 0015 000F 0015 0030 0036 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 000E 0015 001F 0015 000E 0025 0020 0015 000E 0015 000E 0015 000E 0181",
+              "pronto_repeat": "0000 006D 0013",
+              "meta": {
+                "source": "ESPHome remote receiver capture (Harmony hub)"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
       "brand_name": "Samsung",
       "models": [
         {
