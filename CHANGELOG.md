@@ -3,7 +3,13 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [0.3.0] 2026-xx-xx
+## [0.4.0] 2026-09-23
+
+### Added
+
+- **TV**: Added **Philips 70PUS7805/12** model.
+
+## [0.3.0] 2026-09-11
 
 ### Added
 
