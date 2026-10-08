@@ -373,33 +373,32 @@
 
             let hexTokens = cleanedHex.match(/\b[0-9A-Fa-f]{4}\b/g) || [];
             
+            // Split into whole codes using each code's own header lengths
+            // (0000 <freq> <once pairs> <repeat pairs> + 2*(once+repeat)
+            // words) -- NOT on every literal "0000": that is also a code's
+            // own repeat-length field whenever it has no repeat section,
+            // and splitting there cut the header off the code. Same logic
+            // as app.py's split_pronto_sequences() -- keep both in sync.
+            const seqs = [];
+            let i = 0;
+            while (i + 4 <= hexTokens.length) {
+                const once = parseInt(hexTokens[i + 2], 16);
+                const repeat = parseInt(hexTokens[i + 3], 16);
+                if (hexTokens[i] !== "0000" || hexTokens[i + 1] === "0000" || once + repeat === 0) { i++; continue; }
+                const end = i + 4 + 2 * (once + repeat);
+                seqs.push(hexTokens.slice(i, end).join(" "));
+                i = end;
+            }
+
+            // The longest code is the one to replay; the next one, if any,
+            // is its separate repeat burst (either order happens).
             let mainPronto = "";
             let repeatPronto = "";
-
-            if (hexTokens.length > 0) {
-                let currentSeq = [];
-                let seqs = [];
-                
-                for (let i = 0; i < hexTokens.length; i++) {
-                    if (hexTokens[i] === "0000" && currentSeq.length > 0) {
-                        seqs.push(currentSeq.join(" "));
-                        currentSeq = [];
-                    }
-                    currentSeq.push(hexTokens[i]);
-                }
-                if (currentSeq.length > 0) seqs.push(currentSeq.join(" "));
-
-                if (seqs.length > 0) {
-                    if (seqs[0].length > 20) {
-                        mainPronto = seqs[0];
-                        if (seqs.length > 1) repeatPronto = seqs[1];
-                    } else if (seqs.length > 1) {
-                        mainPronto = seqs[1];
-                        repeatPronto = seqs[0];
-                    } else {
-                        mainPronto = seqs[0];
-                    }
-                }
+            if (seqs.length > 0) {
+                let mainIdx = 0;
+                seqs.forEach((seq, k) => { if (seq.split(" ").length > seqs[mainIdx].split(" ").length) mainIdx = k; });
+                mainPronto = seqs[mainIdx];
+                repeatPronto = seqs.find((_, k) => k !== mainIdx) || "";
             }
 
             return {

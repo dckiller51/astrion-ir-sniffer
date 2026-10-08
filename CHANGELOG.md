@@ -3,6 +3,21 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.0] 2026-10-08
+
+### Added
+
+- **Online selector: "Import from Harmony…"** — search any of the ~276,000 devices of the Logitech Harmony IR archive (read live from the [dckiller51/logitech-harmony-ir-archive](https://github.com/dckiller51/logitech-harmony-ir-archive) fork through `raw.githubusercontent.com`, nothing bundled here), preview it (power type, power-on delay, repeats, inputs, data warnings), pick an Astrion category and add it to the selection. It then exports like any other model. Imports are kept in the browser (`localStorage`) and shown with a "Harmony" badge.
+- **`profile` block** on imported model entries (`docs/harmony-import.js`): `power` (`discrete`/`toggle`/`none` with on/off/toggle key sequences), `timing` (`power_on_delay_ms`, `inter_key_delay_ms`, `inter_device_delay_ms`, `input_delay_ms`, `repeats`) and named `inputs` with their key sequences. Commands keep the Harmony names (`PowerOn`, `InputHdmi1`…) and carry `pronto_repeat` when the archive has a separate repeat burst. Astrion 1.2.2-beta+ uses the profile to run Activities the way Harmony did; older versions just ignore it.
+- `tests/test_harmony_import.mjs` — converter tests (`node --test tests/test_harmony_import.mjs`).
+- `test_database_pronto_codes_have_an_intact_header` — fails CI if a code with a broken header lands in `ir-database/` again; regression tests for the capture parser (frame + repeat in either order, log prefixes and line breaks, noise tokens).
+
+### Fixed
+
+- **Captured Pronto codes lost their header — 334 of the 489 commands in `ir-database/` were unusable.** `parse_pronto_capture()` (and its browser twin `cleanEsphomePronto()` in `templates/index.html`) split the captured text on every literal `0000` token to separate a "once" burst from a "repeat" burst. But `0000` is also a code's own repeat-length header field whenever it has no repeat section — the usual case — so the split happened *inside* the code: `pronto` became the header-less rest (`0000 015A 00AE …`, read as a ~12 kHz carrier with a wrong length) and `pronto_repeat` the cut-off header (`0000 006D 0022`). Both now walk the tokens using each code's own header lengths (`split_pronto_sequences()`), and the longest code is kept as `pronto`, the next one as `pronto_repeat`, whatever their order in the log. The previous "Known issues" note claiming existing entries were unaffected was wrong.
+- **`ir-database/` repaired:** the 334 affected commands (Denon AVR-X3300W, LG UBK90, LG HU710PW-GL, Philips 55OLED805, Samsung TQ55LS03FAUXXC) are rejoined into their original code, `pronto_repeat` emptied. Regenerate and copy these categories (audio, player, tv) to the remote. Astrion 1.2.2-beta also repairs this shape on its own when reading older files.
+- Three Xbox One X commands (`clear`, `last_channel`, `power_off`) have a correct header but one word missing from the capture — they need to be captured again.
+
 ## [0.4.0] 2026-09-23
 
 ### Added
@@ -29,10 +44,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `requirements-dev.txt` — adds `ruff` and `pytest` on top of the runtime `requirements.txt`.
 - `.github/workflows/ci.yml` — runs `ruff check`, `ruff format --check`, and `pytest` on every push/PR.
 - `tests/test_app.py` — regression tests for `_real_command()` (locks in the fix above) and `parse_pronto_capture()`.
-
-### Known issues
-
-- **`parse_pronto_capture()` can strip a captured code's header when the code has no distinct repeat burst.** Its heuristic splits the raw log text on every literal `"0000"` token — intended to separate a "once" burst from a "repeat" burst — but a Pronto code's own repeat-length header field is `"0000"` whenever the code has *no* repeat burst, which is the shape of most captures currently in `ir-database/` (e.g. `"0000 006D 0027 0000 00AD..."`). Fed that shape directly, the function splits at that field and returns a `main` burst missing its type + carrier-frequency header (`006D`), which would not be a valid Pronto code. Reproduced with synthetic input matching real capture shapes (see the `xfail` test in `tests/test_app.py`); **not yet fixed**, because the exact raw text `esphome logs` produces (line prefixes, whether "once"/"repeat" arrive as one line or two, etc.) wasn't available to verify a fix against without risking silently corrupting future captures. The existing entries in `ir-database/` are unaffected by this (they already have intact headers), so whatever the real raw log shape is, it must avoid hitting this path in practice — worth confirming with a real `esphome logs` sample before touching this function.
 
 ## [0.1.0] - unreleased history not tracked before this changelog
 

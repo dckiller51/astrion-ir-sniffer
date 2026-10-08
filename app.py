@@ -34,47 +34,59 @@ PRONTO_TOKEN_RE = re.compile(r"\b[0-9A-Fa-f]{4}\b")
 DEFAULT_YAML_PATH = os.environ.get("ASTRION_YAML_PATH", "esphome/astrion-ir-sniffer.yaml")
 
 
-def parse_pronto_capture(raw_log):
-    """Extracts {pronto, pronto_repeat} from raw ESPHome log text.
+def split_pronto_sequences(tokens):
+    """Splits a flat list of 4-hex-digit tokens into whole Pronto codes.
 
-    Mirrors the heuristic already used client-side in templates/index.html's
-    cleanEsphomePronto(): a Pronto dump can contain a "once" burst and a
-    "repeat" burst back to back, each starting with a 0000 type code. We
-    split on those boundaries and keep the longest sequence as `pronto`
-    (the burst you actually want to replay) and the other as
-    `pronto_repeat`, kept even when the sequence order from the log put the
-    repeat burst first (which happens for some devices, e.g. a few Sony
-    buttons that log only a repeat).
+    Each learned (type 0000) code says its own length in its header:
+    ``0000 <freq> <once pairs> <repeat pairs>`` followed by
+    ``2 * (once + repeat)`` timing words. Walking the tokens with those
+    lengths is the only reliable way to find where one code ends and the
+    next begins: splitting on every literal ``0000`` token (what this used
+    to do) also splits *inside* a code, at its own repeat-length field,
+    which is ``0000`` for any code without a repeat section -- that left
+    ``0000 006D 0022`` as a fake "repeat" and the rest, header-less, as the
+    "main" code.
+
+    Tokens that can't start a code (log noise, a zero frequency, empty
+    lengths) are skipped; a code cut short at the end of the text is kept
+    as far as it goes.
+    """
+    sequences = []
+    i = 0
+    n = len(tokens)
+    while i + 4 <= n:
+        once = int(tokens[i + 2], 16)
+        repeat = int(tokens[i + 3], 16)
+        if tokens[i] != "0000" or tokens[i + 1] == "0000" or once + repeat == 0:
+            i += 1
+            continue
+        end = i + 4 + 2 * (once + repeat)
+        sequences.append(" ".join(tokens[i:end]))
+        i = end
+    return sequences
+
+
+def parse_pronto_capture(raw_log):
+    """Extracts (pronto, pronto_repeat) from raw ESPHome log text.
+
+    A capture can hold a "once" burst and a separate "repeat" burst back
+    to back (e.g. NEC's short repeat code), in either order -- a few Sony
+    buttons log only a repeat. The longest code is the one to replay
+    (`pronto`); the next one, if any, is kept as `pronto_repeat`. Same
+    logic as templates/index.html's cleanEsphomePronto() -- keep both in
+    sync.
     """
     if not raw_log:
         return "", ""
 
-    tokens = PRONTO_TOKEN_RE.findall(raw_log)
-    if not tokens:
-        return "", ""
-
-    sequences = []
-    current_seq = []
-    for token in tokens:
-        if token == "0000" and current_seq:
-            sequences.append(" ".join(current_seq))
-            current_seq = []
-        current_seq.append(token)
-    if current_seq:
-        sequences.append(" ".join(current_seq))
-
+    sequences = split_pronto_sequences(PRONTO_TOKEN_RE.findall(raw_log))
     if not sequences:
         return "", ""
-    if len(sequences[0]) > 20:
-        main = sequences[0]
-        repeat = sequences[1] if len(sequences) > 1 else ""
-    elif len(sequences) > 1:
-        main = sequences[1]
-        repeat = sequences[0]
-    else:
-        main = sequences[0]
-        repeat = ""
-    return main, repeat
+
+    main_index = max(range(len(sequences)), key=lambda k: (len(sequences[k].split()), -k))
+    main = sequences[main_index]
+    others = [seq for k, seq in enumerate(sequences) if k != main_index]
+    return main, (others[0] if others else "")
 
 
 class EsphomeLogListener:

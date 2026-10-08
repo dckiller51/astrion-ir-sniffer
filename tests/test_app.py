@@ -1,8 +1,7 @@
 import json
+from pathlib import Path
 
-import pytest
-
-from app import _real_command, parse_pronto_capture
+from app import _real_command, parse_pronto_capture, split_pronto_sequences
 
 # ---------------------------------------------------------------------------
 # _real_command()
@@ -59,21 +58,78 @@ def test_parse_pronto_capture_single_burst_with_nonzero_repeat_length():
     assert repeat == ""
 
 
-@pytest.mark.xfail(
-    reason=(
-        "KNOWN ISSUE, not yet fixed: when a captured code's own repeat-length "
-        "header field is literally '0000' (i.e. a one-shot code with no "
-        "distinct repeat burst -- the shape of most captures in this "
-        "project's own ir-database/, e.g. '0000 006D 0027 0000 00AD...'), "
-        "parse_pronto_capture() misreads that field as a sequence boundary "
-        "and splits there, stripping the type+carrier-frequency header off "
-        "`main`. Reproduced with real capture shapes; not yet fixed because "
-        "the exact raw `esphome logs` text format wasn't available to "
-        "verify a fix against. See CHANGELOG.md 'Known issues'."
-    ),
-    strict=True,
-)
 def test_parse_pronto_capture_does_not_strip_header_when_repeat_length_is_zero():
+    """Regression: the repeat-length header field is '0000' for any code
+    without a repeat section; splitting on every '0000' cut the header off
+    (pronto '0000 00AD ...' + fake repeat '0000 006D 0027')."""
     code = "0000 006D 0027 0000 00AD 00AD 0012 0014 0012 003B 0012 0181"
-    main, _repeat = parse_pronto_capture(f"Received pronto: {code}")
+    main, repeat = parse_pronto_capture(f"Received pronto: {code}")
     assert main == code
+    assert repeat == ""
+
+
+# A complete NEC frame (34 pairs) and its separate repeat code, as found in
+# ir-database/ before this was fixed.
+NEC_FRAME = "0000 006D 0022 0000 015A 00AE " + "0015 0016 " * 16 + "0015 0041 " * 16 + "0015 0181"
+NEC_REPEAT = "0000 006D 0002 0000 0159 0057 0015 0181"
+
+
+def test_parse_pronto_capture_frame_then_repeat():
+    main, repeat = parse_pronto_capture(f"Received Pronto: data={NEC_FRAME} {NEC_REPEAT}")
+    assert main == NEC_FRAME.strip()
+    assert repeat == NEC_REPEAT
+
+
+def test_parse_pronto_capture_repeat_logged_first_still_picks_the_frame():
+    main, repeat = parse_pronto_capture(f"{NEC_REPEAT}\n{NEC_FRAME}")
+    assert main == NEC_FRAME.strip()
+    assert repeat == NEC_REPEAT
+
+
+def test_parse_pronto_capture_ignores_log_noise_and_line_breaks():
+    words = NEC_FRAME.split()
+    log = (
+        "[12:00:01.123][I][remote.pronto:229]: Received Pronto: data=" + " ".join(words[:40]) + "\n"
+        "[12:00:01.124][I][remote.pronto:229]: Received Pronto: data=" + " ".join(words[40:])
+    )
+    main, repeat = parse_pronto_capture(log)
+    assert main == " ".join(words)
+    assert repeat == ""
+
+
+def test_split_pronto_sequences_skips_tokens_that_cannot_start_a_code():
+    tokens = ["ABCD", "0000", "0000", "0001", "0000"] + NEC_REPEAT.split()
+    assert split_pronto_sequences(tokens) == [NEC_REPEAT]
+
+
+# ---------------------------------------------------------------------------
+# docs/ir-database/ content
+# ---------------------------------------------------------------------------
+
+
+def _database_codes():
+    root = Path(__file__).resolve().parent.parent / "docs" / "ir-database"
+    for path in sorted(root.glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        for brand in data["brands"]:
+            for model in brand["models"]:
+                for cmd_id, cmd in model.get("commands", {}).items():
+                    where = f"{path.name}: {brand['brand_name']} {model['model_name']} / {cmd_id}"
+                    yield where, cmd
+
+
+def test_database_pronto_codes_have_an_intact_header():
+    """Guards against the old split-on-'0000' capture bug, which stored the
+    header-less rest of a code as `pronto` (second word = first burst,
+    giving a ~12 kHz "carrier") and `0000 006D 00xx` as `pronto_repeat`."""
+    broken = []
+    for where, cmd in _database_codes():
+        for field in ("pronto", "pronto_repeat"):
+            words = cmd.get(field, "").split()
+            if not words:
+                continue
+            freq = int(words[1], 16) if len(words) > 1 else 0
+            carrier_ok = freq != 0 and 20_000 < 4_145_146 / freq < 60_000
+            if words[0] != "0000" or not carrier_ok or len(words) <= 4:
+                broken.append(f"{where} [{field}]")
+    assert broken == []

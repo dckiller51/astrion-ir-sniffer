@@ -27,3 +27,8 @@ jobs:
 
       - name: Tests
         run: pytest -v
+
+      # Harmony archive converter (docs/harmony-import.js). Node ships with
+      # ubuntu-latest; no npm install needed.
+      - name: JS tests
+        run: node --test tests/test_harmony_import.mjs

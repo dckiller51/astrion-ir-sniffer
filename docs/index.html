@@ -178,6 +178,40 @@
     font-family: var(--sans);
   }
   .toolbar .toolbar-btn:hover{ color: var(--text); border-color: var(--text-faint); }
+  .toolbar .toolbar-btn.accent{ border-color: var(--signal-dim); color: var(--signal); margin-left: auto; }
+
+  /* ---- Harmony archive import ---------------------------------------- */
+  .badge-harmony{
+    font-family: var(--mono); font-size: 0.68rem; color: var(--signal);
+    border: 1px solid var(--signal-dim); border-radius: 4px; padding: 1px 6px;
+  }
+  dialog.hx{
+    background: var(--panel); color: var(--text); border: 1px solid var(--border);
+    border-radius: 10px; padding: 0; width: min(720px, calc(100vw - 32px));
+    max-height: calc(100vh - 48px);
+  }
+  dialog.hx::backdrop{ background: rgba(0,0,0,0.6); }
+  .hx-head{ display:flex; align-items:center; justify-content:space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .hx-head h2{ margin:0; font-size: 1rem; }
+  .hx-close{ background:none; border:none; color: var(--text-dim); font-size: 1.2rem; cursor:pointer; }
+  .hx-body{ padding: 16px 20px; display:grid; gap: 14px; overflow-y:auto; max-height: calc(100vh - 140px); }
+  .hx-body label{ font-size: 0.78rem; color: var(--text-dim); display:block; margin-bottom: 5px; }
+  .hx-body input[type=search], .hx-body select{
+    width: 100%; background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 8px 10px; font-size: 0.88rem; font-family: var(--sans);
+  }
+  .hx-list{ max-height: 190px; overflow-y:auto; border: 1px solid var(--border); border-radius: 6px; margin-top: 6px; }
+  .hx-list:empty{ display:none; }
+  .hx-item{ display:flex; justify-content:space-between; gap: 10px; padding: 7px 10px; cursor:pointer; font-size: 0.86rem; color: var(--text-dim); }
+  .hx-item:hover{ background: var(--panel-2); color: var(--text); }
+  .hx-item.sel{ background: var(--signal-dim); color: var(--text); }
+  .hx-item .meta{ font-family: var(--mono); font-size: 0.72rem; color: var(--text-faint); }
+  .hx-preview{ background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; font-size: 0.84rem; line-height: 1.55; }
+  .hx-preview .warn{ color: var(--signal); }
+  .hx-preview code{ font-family: var(--mono); font-size: 0.78rem; }
+  .hx-row{ display:flex; gap: 10px; align-items:flex-end; flex-wrap: wrap; }
+  .hx-row > div{ flex: 1; min-width: 180px; }
+  .hx-note{ font-size: 0.74rem; color: var(--text-faint); }
 
   .tree{
     flex: 1;
@@ -383,12 +417,46 @@
       <input type="search" id="searchBox" data-i18n-placeholder="search_placeholder" placeholder="Filter by brand or model…" disabled>
       <button class="toolbar-btn" id="selectAllBtn" data-i18n="btn_select_all" disabled>Select all (category)</button>
       <button class="toolbar-btn" id="deselectAllBtn" data-i18n="btn_deselect_all" disabled>Deselect all (category)</button>
+      <button class="toolbar-btn accent" id="harmonyBtn" data-i18n="btn_harmony" disabled>Import from Harmony…</button>
     </div>
     <div class="tree" id="tree">
       <div class="empty-state" data-i18n="loading_catalog">Loading catalog…</div>
     </div>
   </main>
 </div>
+
+<dialog class="hx" id="harmonyDialog">
+  <div class="hx-head">
+    <h2 data-i18n="hx_title">Import from the Logitech Harmony archive</h2>
+    <button class="hx-close" id="hxClose" aria-label="Close">✕</button>
+  </div>
+  <div class="hx-body">
+    <div class="hx-note" data-i18n="hx_intro">276,000 devices with their IR codes and the timing Harmony used (power-on delay, repeats, input sequences). Loaded live from GitHub — nothing is stored on this site.</div>
+    <div>
+      <label for="hxMakerSearch" data-i18n="hx_maker">Brand</label>
+      <input type="search" id="hxMakerSearch" autocomplete="off">
+      <div class="hx-list" id="hxMakerList"></div>
+    </div>
+    <div>
+      <label for="hxModelSearch" data-i18n="hx_model">Model</label>
+      <input type="search" id="hxModelSearch" autocomplete="off" disabled>
+      <div class="hx-list" id="hxModelList"></div>
+    </div>
+    <div class="hx-preview" id="hxPreview" hidden></div>
+    <div class="hx-row">
+      <div>
+        <label for="hxCategory" data-i18n="hx_category">Astrion category</label>
+        <select id="hxCategory"></select>
+      </div>
+      <button class="btn-generate" id="hxAddBtn" data-i18n="hx_add" disabled>Add to my selection</button>
+    </div>
+    <div class="hx-note" id="hxStatus"></div>
+    <div>
+      <label data-i18n="hx_imported">Imported devices (kept in this browser)</label>
+      <div class="hx-list" id="hxImportedList"></div>
+    </div>
+  </div>
+</dialog>
 
 <div class="status-line" id="statusLine"></div>
 <footer>
@@ -404,6 +472,7 @@
   </div>
 </footer>
 
+<script src="harmony-import.js"></script>
 <script>
 (function(){
   'use strict';
@@ -438,7 +507,31 @@
       status_saving_direct: "Saving {n} file(s) to the folder you picked…",
       status_saved_direct: "Saved {n} file(s) directly to \"{folder}/ir-database/\".",
       status_save_direct_cancelled: "Cancelled — nothing was saved.",
-      status_save_direct_error: "Couldn't save directly ({error}) — use \"Generate files\" to download instead."
+      status_save_direct_error: "Couldn't save directly ({error}) — use \"Generate files\" to download instead.",
+      btn_harmony: "Import from Harmony…",
+      hx_title: "Import from the Logitech Harmony archive",
+      hx_intro: "276,000 devices with their IR codes and the timing Harmony used (power-on delay, repeats, input sequences). Loaded live from GitHub — nothing is stored on this site.",
+      hx_maker: "Brand",
+      hx_model: "Model",
+      hx_category: "Astrion category",
+      hx_add: "Add to my selection",
+      hx_imported: "Imported devices (kept in this browser)",
+      hx_none_imported: "None yet.",
+      hx_loading: "Loading…",
+      hx_load_error: "Couldn't reach the archive ({error}).",
+      hx_n_models: "{n} model|{n} models",
+      hx_no_match: "No match.",
+      hx_more: "…{n} more — refine the search.",
+      hx_power: "Power",
+      hx_power_discrete: "separate on/off",
+      hx_power_toggle: "single toggle button",
+      hx_power_none: "no power command",
+      hx_power_unknown: "unknown",
+      hx_timing: "Wait after power-on: {on} ms · repeats: {rep} · between keys: {key} ms",
+      hx_inputs: "Inputs",
+      hx_commands: "{n} IR command|{n} IR commands",
+      hx_added: "Added {model} to {category} and checked it. A generated file replaces the remote's whole {category} file when copied by hand — keep your other {category} devices checked too.",
+      hx_remove: "Remove"
     },
     fr: {
       title: "Astrion IR Database",
@@ -469,7 +562,31 @@
       status_saving_direct: "Enregistrement de {n} fichier(s) dans le dossier choisi…",
       status_saved_direct: "{n} fichier(s) enregistré(s) directement dans « {folder}/ir-database/ ».",
       status_save_direct_cancelled: "Annulé — rien n'a été enregistré.",
-      status_save_direct_error: "Échec de l'enregistrement direct ({error}) — utilisez « Générer les fichiers » pour télécharger à la place."
+      status_save_direct_error: "Échec de l'enregistrement direct ({error}) — utilisez « Générer les fichiers » pour télécharger à la place.",
+      btn_harmony: "Importer depuis Harmony…",
+      hx_title: "Importer depuis l'archive Logitech Harmony",
+      hx_intro: "276 000 appareils avec leurs codes IR et les réglages qu'utilisait Harmony (délai après allumage, répétitions, séquences d'entrées). Chargé en direct depuis GitHub — rien n'est stocké sur ce site.",
+      hx_maker: "Marque",
+      hx_model: "Modèle",
+      hx_category: "Catégorie Astrion",
+      hx_add: "Ajouter à ma sélection",
+      hx_imported: "Appareils importés (gardés dans ce navigateur)",
+      hx_none_imported: "Aucun pour l'instant.",
+      hx_loading: "Chargement…",
+      hx_load_error: "Impossible de joindre l'archive ({error}).",
+      hx_n_models: "{n} modèle|{n} modèles",
+      hx_no_match: "Aucun résultat.",
+      hx_more: "…{n} de plus — affinez la recherche.",
+      hx_power: "Alimentation",
+      hx_power_discrete: "marche/arrêt séparés",
+      hx_power_toggle: "bouton unique (toggle)",
+      hx_power_none: "pas de commande d'alimentation",
+      hx_power_unknown: "inconnue",
+      hx_timing: "Attente après allumage : {on} ms · répétitions : {rep} · entre touches : {key} ms",
+      hx_inputs: "Entrées",
+      hx_commands: "{n} commande IR|{n} commandes IR",
+      hx_added: "{model} ajouté à {category} et coché. Copié à la main, le fichier généré remplace tout le fichier {category} de la télécommande — gardez aussi vos autres appareils {category} cochés.",
+      hx_remove: "Retirer"
     }
   };
 
@@ -699,6 +816,12 @@
 
         modelRow.appendChild(cb);
         modelRow.appendChild(nameSpan);
+        if (model.profile){
+          const badge = document.createElement('span');
+          badge.className = 'badge-harmony';
+          badge.textContent = 'Harmony';
+          modelRow.appendChild(badge);
+        }
         modelRow.appendChild(countSpan);
         modelsEl.appendChild(modelRow);
       });
@@ -737,6 +860,7 @@
         const res = await fetch(prefix + cat.file);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         cat.data = await res.json();
+        applyHarmonyImports(id);
       } catch(err){
         cat.loadError = true;
         console.error('Failed to load ' + cat.file, err);
@@ -946,6 +1070,274 @@
     }
   });
 
+  // ---- Logitech Harmony archive import ---------------------------------
+  //
+  // Search a brand + model in the archive fork (harmony-import.js does the
+  // fetching and the conversion), then drop the converted model entry into
+  // the chosen category's in-memory data, checked — from there it's an
+  // ordinary model: "Generate files" / "Send to my remote" export it with
+  // everything else. The entry carries a "profile" block (power type,
+  // power-on delay, repeats, input sequences) that Astrion 1.2.2-beta+ uses to run
+  // Activities the way Harmony did.
+  //
+  // Imports are kept in localStorage so they survive a reload: the
+  // category files on this site don't contain them, and an export only
+  // ever contains what's checked.
+
+  const HX_STORE_KEY = 'astrion_harmony_imports';
+  const hx = {
+    dialog: document.getElementById('harmonyDialog'),
+    btn: document.getElementById('harmonyBtn'),
+    makerSearch: document.getElementById('hxMakerSearch'),
+    makerList: document.getElementById('hxMakerList'),
+    modelSearch: document.getElementById('hxModelSearch'),
+    modelList: document.getElementById('hxModelList'),
+    preview: document.getElementById('hxPreview'),
+    category: document.getElementById('hxCategory'),
+    addBtn: document.getElementById('hxAddBtn'),
+    status: document.getElementById('hxStatus'),
+    importedList: document.getElementById('hxImportedList'),
+    makers: null,          // [{c, n, s}] once loaded
+    maker: null,           // selected maker {c, n, s}
+    models: [],            // [{f, id, m}] of the selected maker
+    current: null          // last converted result {brand, entry, warnings, category}
+  };
+  const HX_MAX_ROWS = 60;
+
+  function loadHarmonyImports(){
+    try { return JSON.parse(localStorage.getItem(HX_STORE_KEY) || '[]'); }
+    catch(e){ return []; }
+  }
+  function saveHarmonyImports(list){
+    try { localStorage.setItem(HX_STORE_KEY, JSON.stringify(list)); }
+    catch(e){ console.warn('Could not persist Harmony imports', e); }
+  }
+
+  /** Puts every stored import for this category into its loaded data —
+   * replacing a previous copy of the same import, never duplicating it. */
+  function applyHarmonyImports(catId){
+    const cat = categories.get(catId);
+    if (!cat || !cat.data) return;
+    cat.data.brands = cat.data.brands || [];
+    loadHarmonyImports().filter(i => i.category === catId).forEach(i => {
+      let brand = cat.data.brands.find(b => b.brand_name.toLowerCase() === i.brand.toLowerCase());
+      if (!brand){
+        brand = { brand_name: i.brand, models: [] };
+        cat.data.brands.push(brand);
+        cat.data.brands.sort((a, b) => a.brand_name.localeCompare(b.brand_name));
+      }
+      brand.models = brand.models || [];
+      const at = brand.models.findIndex(m => m.model_name === i.entry.model_name);
+      if (at >= 0) brand.models[at] = i.entry; else brand.models.push(i.entry);
+      if (i.selected !== false) setModelSelected(catId, brand.brand_name, i.entry.model_name, true);
+    });
+  }
+
+  function removeHarmonyImport(index){
+    const list = loadHarmonyImports();
+    const [gone] = list.splice(index, 1);
+    saveHarmonyImports(list);
+    const cat = gone && categories.get(gone.category);
+    if (cat && cat.data){
+      const brand = (cat.data.brands || []).find(b => b.brand_name.toLowerCase() === gone.brand.toLowerCase());
+      if (brand){
+        brand.models = (brand.models || []).filter(m => m.model_name !== gone.entry.model_name);
+        setModelSelected(gone.category, brand.brand_name, gone.entry.model_name, false);
+        if (!brand.models.length) cat.data.brands = cat.data.brands.filter(b => b !== brand);
+      }
+    }
+    renderImportedList();
+    renderTree();
+    refreshChrome();
+  }
+
+  function renderImportedList(){
+    const list = loadHarmonyImports();
+    hx.importedList.innerHTML = '';
+    if (!list.length){
+      hx.importedList.innerHTML = '<div class="hx-item" style="cursor:default">' + t('hx_none_imported') + '</div>';
+      return;
+    }
+    list.forEach((i, idx) => {
+      const row = document.createElement('div');
+      row.className = 'hx-item';
+      row.style.cursor = 'default';
+      const label = (categories.get(i.category) || {}).label || i.category;
+      row.innerHTML = '<span>' + escapeHtml(i.brand + ' ' + i.entry.model_name) + ' <span class="meta">' + escapeHtml(label) + '</span></span>';
+      const rm = document.createElement('button');
+      rm.className = 'hx-close';
+      rm.style.fontSize = '0.8rem';
+      rm.textContent = t('hx_remove');
+      rm.addEventListener('click', () => removeHarmonyImport(idx));
+      row.appendChild(rm);
+      hx.importedList.appendChild(row);
+    });
+  }
+
+  function hxRows(container, items, render, onPick){
+    container.innerHTML = '';
+    if (!items.length){
+      container.innerHTML = '<div class="hx-item" style="cursor:default">' + t('hx_no_match') + '</div>';
+      return;
+    }
+    items.slice(0, HX_MAX_ROWS).forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'hx-item';
+      row.innerHTML = render(item);
+      row.addEventListener('click', () => {
+        container.querySelectorAll('.hx-item.sel').forEach(el => el.classList.remove('sel'));
+        row.classList.add('sel');
+        onPick(item);
+      });
+      container.appendChild(row);
+    });
+    if (items.length > HX_MAX_ROWS){
+      const more = document.createElement('div');
+      more.className = 'hx-item';
+      more.style.cursor = 'default';
+      more.textContent = t('hx_more', {n: items.length - HX_MAX_ROWS}).replace(/&[^;]+;/g, '');
+      container.appendChild(more);
+    }
+  }
+
+  /** Substring match, prefix matches first, then by size (models count). */
+  function rankByName(items, query, nameOf, sizeOf){
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return items
+      .filter(it => nameOf(it).toLowerCase().includes(q))
+      .sort((a, b) => {
+        const pa = nameOf(a).toLowerCase().startsWith(q) ? 0 : 1;
+        const pb = nameOf(b).toLowerCase().startsWith(q) ? 0 : 1;
+        return pa - pb || (sizeOf ? sizeOf(b) - sizeOf(a) : 0) || nameOf(a).localeCompare(nameOf(b));
+      });
+  }
+
+  async function hxEnsureMakers(){
+    if (hx.makers) return true;
+    hx.status.textContent = t('hx_loading');
+    try {
+      hx.makers = await window.HarmonyImport.loadManufacturers();
+      hx.status.textContent = '';
+      return true;
+    } catch(err){
+      hx.status.textContent = t('hx_load_error', {error: err.message || String(err)});
+      return false;
+    }
+  }
+
+  function hxRenderMakers(){
+    if (!hx.makers) return;
+    hxRows(hx.makerList, rankByName(hx.makers, hx.makerSearch.value, m => m.n, m => m.c),
+      m => escapeHtml(m.n) + '<span class="meta">' + t('hx_n_models', {n: m.c}).replace(/&[^;]+;/g, '') + '</span>',
+      hxPickMaker);
+  }
+
+  async function hxPickMaker(maker){
+    hx.maker = maker;
+    hx.models = [];
+    hx.current = null;
+    hx.preview.hidden = true;
+    hx.addBtn.disabled = true;
+    hx.modelSearch.value = '';
+    hx.modelSearch.disabled = true;
+    hx.modelList.innerHTML = '';
+    hx.status.textContent = t('hx_loading');
+    try {
+      hx.models = await window.HarmonyImport.loadModels(maker.s);
+      hx.status.textContent = '';
+      hx.modelSearch.disabled = false;
+      hx.modelSearch.focus();
+      hxRenderModels();
+    } catch(err){
+      hx.status.textContent = t('hx_load_error', {error: err.message || String(err)});
+    }
+  }
+
+  function hxRenderModels(){
+    const q = hx.modelSearch.value.trim();
+    const items = q ? rankByName(hx.models, q, m => String(m.m).trim()) : hx.models;
+    hxRows(hx.modelList, items, m => escapeHtml(String(m.m).trim()), hxPickModel);
+  }
+
+  function powerLabel(type){
+    return t({discrete: 'hx_power_discrete', toggle: 'hx_power_toggle', none: 'hx_power_none'}[type] || 'hx_power_unknown');
+  }
+
+  async function hxPickModel(model){
+    hx.current = null;
+    hx.addBtn.disabled = true;
+    hx.status.textContent = t('hx_loading');
+    try {
+      const r = await window.HarmonyImport.importDevice(hx.maker.s, model.f);
+      hx.current = r;
+      const p = r.entry.profile;
+      const n = Object.keys(r.entry.commands).length;
+      hx.preview.innerHTML =
+        '<strong>' + escapeHtml(r.brand + ' ' + r.entry.model_name) + '</strong> — ' + t('hx_commands', {n}) + '<br>' +
+        t('hx_power') + ' : ' + powerLabel(p.power.type) + '<br>' +
+        t('hx_timing', {on: p.timing.power_on_delay_ms, rep: p.timing.repeats, key: p.timing.inter_key_delay_ms}) +
+        (p.inputs.length ? '<br>' + t('hx_inputs') + ' : ' + p.inputs.map(i => '<code>' + escapeHtml(i.name) + '</code>').join(', ') : '') +
+        r.warnings.map(w => '<br><span class="warn">⚠ ' + escapeHtml(w) + '</span>').join('');
+      hx.preview.hidden = false;
+      if (categories.has(r.category)) hx.category.value = r.category;
+      hx.addBtn.disabled = n === 0;
+      hx.status.textContent = '';
+    } catch(err){
+      hx.status.textContent = t('hx_load_error', {error: err.message || String(err)});
+    }
+  }
+
+  async function hxAdd(){
+    const r = hx.current;
+    if (!r) return;
+    const catId = hx.category.value;
+    const cat = categories.get(catId);
+    if (!cat) return;
+    // A curated (non-Harmony) entry with the same brand+model already in
+    // this category? Keep both, the imported one gets a suffix.
+    const entry = JSON.parse(JSON.stringify(r.entry));
+    const existing = cat.data && (cat.data.brands || []).find(b => b.brand_name.toLowerCase() === r.brand.toLowerCase());
+    if (existing && (existing.models || []).some(m => m.model_name === entry.model_name && !m.profile)){
+      entry.model_name += ' (Harmony)';
+    }
+    const list = loadHarmonyImports().filter(i => !(i.category === catId && i.brand.toLowerCase() === r.brand.toLowerCase() && i.entry.model_name === entry.model_name));
+    list.push({ category: catId, brand: r.brand, entry, selected: true });
+    saveHarmonyImports(list);
+    if (!cat.data){
+      await selectCategory(catId); // loads the file, then applies imports
+    } else {
+      applyHarmonyImports(catId);
+      if (activeCategoryId !== catId) await selectCategory(catId);
+    }
+    renderTree();
+    refreshChrome();
+    renderImportedList();
+    hx.status.textContent = t('hx_added', {model: r.brand + ' ' + entry.model_name, category: cat.label}).replace(/&[^;]+;/g, m => ({'&quot;':'"','&#39;':"'",'&amp;':'&','&lt;':'<','&gt;':'>'}[m] || m));
+  }
+
+  function initHarmonyImport(){
+    if (!window.HarmonyImport){ return; }
+    hx.category.innerHTML = '';
+    categories.forEach((cat, id) => {
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = cat.label;
+      hx.category.appendChild(opt);
+    });
+    hx.btn.disabled = false;
+    hx.btn.addEventListener('click', async () => {
+      renderImportedList();
+      hx.dialog.showModal();
+      hx.makerSearch.focus();
+      if (await hxEnsureMakers()) hxRenderMakers();
+    });
+    document.getElementById('hxClose').addEventListener('click', () => hx.dialog.close());
+    hx.makerSearch.addEventListener('input', hxRenderMakers);
+    hx.modelSearch.addEventListener('input', hxRenderModels);
+    hx.addBtn.addEventListener('click', hxAdd);
+  }
+
   // ---- boot -----------------------------------------------------------
 
   async function init(){
@@ -974,6 +1366,7 @@
       renderCategoryNav();
       tree.innerHTML = '<div class="empty-state">' + t('choose_category') + '</div>';
       refreshChrome();
+      initHarmonyImport();
 
       categories.forEach(async (cat, id) => {
         try {
@@ -981,7 +1374,8 @@
           const catRes = await fetch(prefix + cat.file);
           if (catRes.ok) {
             cat.data = await catRes.json();
-            renderCategoryNav();
+            applyHarmonyImports(id);
+            refreshChrome();
           }
         } catch (err) {
           console.error('Erreur de préchargement pour ' + cat.file, err);

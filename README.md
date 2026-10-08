@@ -131,6 +131,27 @@ If you just want to select and download existing infrared device databases witho
 * **Generate Files:** Check the devices you own and click **"Generate files"** to download the corresponding JSON files ready to copy into `/sdcard/astrion/ir-database/` on your remote.
 * **⚠️ Direct Send Limitation on GitHub Pages:** Because the online web UI is hosted on GitHub Pages (`HTTPS`) and your remote operates on your local network (`HTTP`), modern browsers block direct requests (Mixed Content restriction). Therefore, the **"Send to my remote..."** button is automatically disabled on the online version.
 
+### Importing a device from the Logitech Harmony archive
+
+Missing device? **"Import from Harmony…"** (top right of the selector)
+searches the Logitech Harmony IR archive — about 276,000 devices, read
+live from [dckiller51/logitech-harmony-ir-archive](https://github.com/dckiller51/logitech-harmony-ir-archive).
+Pick the brand, then the model, check the preview, choose the Astrion
+category and click **"Add to my selection"**. The device is checked and
+exported with the rest.
+
+Besides its IR codes, an imported device carries the timing Harmony used
+for it — how long it needs after power-on, how many times each key is
+sent, whether power is a single toggle button, and the key sequence for
+each input. Astrion 1.2.2-beta+ uses it to run Activities like a Harmony hub did.
+
+⚠️ A generated file **replaces** the remote's whole category file when
+you copy it by hand: keep your other devices of that category checked
+too. ("Send to my remote…" merges instead, with Astrion 1.2.2-beta+.)
+
+The IR codes come from Logitech's former online database; see the
+archive's README for its licence notes.
+
 ### Running the Selector Locally (to enable direct send)
 
 Since the standalone selector is located in the `docs/` folder, you can run it locally on your machine to bypass HTTPS restrictions and use the direct send feature:
