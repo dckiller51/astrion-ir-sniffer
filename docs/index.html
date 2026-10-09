@@ -530,7 +530,7 @@
       hx_timing: "Wait after power-on: {on} ms · repeats: {rep} · between keys: {key} ms",
       hx_inputs: "Inputs",
       hx_commands: "{n} IR command|{n} IR commands",
-      hx_added: "Added {model} to {category} and checked it. A generated file replaces the remote's whole {category} file when copied by hand — keep your other {category} devices checked too.",
+      hx_added: "Added {model} to {category} (replacing any entry with the same name) and checked it. A generated file replaces the remote's whole {category} file when copied by hand — keep your other {category} devices checked too.",
       hx_remove: "Remove"
     },
     fr: {
@@ -585,7 +585,7 @@
       hx_timing: "Attente après allumage : {on} ms · répétitions : {rep} · entre touches : {key} ms",
       hx_inputs: "Entrées",
       hx_commands: "{n} commande IR|{n} commandes IR",
-      hx_added: "{model} ajouté à {category} et coché. Copié à la main, le fichier généré remplace tout le fichier {category} de la télécommande — gardez aussi vos autres appareils {category} cochés.",
+      hx_added: "{model} ajouté à {category} (remplace l'entrée de même nom s'il y en avait une) et coché. Copié à la main, le fichier généré remplace tout le fichier {category} de la télécommande — gardez aussi vos autres appareils {category} cochés.",
       hx_remove: "Retirer"
     }
   };
@@ -1105,8 +1105,20 @@
   const HX_MAX_ROWS = 60;
 
   function loadHarmonyImports(){
-    try { return JSON.parse(localStorage.getItem(HX_STORE_KEY) || '[]'); }
+    let list;
+    try { list = JSON.parse(localStorage.getItem(HX_STORE_KEY) || '[]'); }
     catch(e){ return []; }
+    // Imports saved before 0.5.1 could carry a " (Harmony)" suffix that
+    // broke dashboards referencing the plain model name — drop it.
+    let migrated = false;
+    list.forEach(i => {
+      if (i.entry && / \(Harmony\)$/.test(i.entry.model_name || '')) {
+        i.entry.model_name = i.entry.model_name.replace(/ \(Harmony\)$/, '');
+        migrated = true;
+      }
+    });
+    if (migrated) saveHarmonyImports(list);
+    return list;
   }
   function saveHarmonyImports(list){
     try { localStorage.setItem(HX_STORE_KEY, JSON.stringify(list)); }
@@ -1294,13 +1306,11 @@
     const catId = hx.category.value;
     const cat = categories.get(catId);
     if (!cat) return;
-    // A curated (non-Harmony) entry with the same brand+model already in
-    // this category? Keep both, the imported one gets a suffix.
+    // Same brand+model already in this category (e.g. a curated capture)?
+    // The import *replaces* it, under the same name: dashboards reference
+    // devices by brand+model, so a renamed copy ("… (Harmony)", as this
+    // used to do) silently broke every device pointing at that model.
     const entry = JSON.parse(JSON.stringify(r.entry));
-    const existing = cat.data && (cat.data.brands || []).find(b => b.brand_name.toLowerCase() === r.brand.toLowerCase());
-    if (existing && (existing.models || []).some(m => m.model_name === entry.model_name && !m.profile)){
-      entry.model_name += ' (Harmony)';
-    }
     const list = loadHarmonyImports().filter(i => !(i.category === catId && i.brand.toLowerCase() === r.brand.toLowerCase() && i.entry.model_name === entry.model_name));
     list.push({ category: catId, brand: r.brand, entry, selected: true });
     saveHarmonyImports(list);

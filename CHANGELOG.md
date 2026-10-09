@@ -3,6 +3,17 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.1] 2026-10-09
+
+### Fixed
+
+- Inputs defined as a device *state* (e.g. LG TVs: input "HDMI 2" = set `Screen` to `HDMI2`) are expanded through the archive's `states` block into their key sequence (`InputHdmi2`); they used to be dropped, leaving such devices with no inputs.
+- An imported device **replaces** an entry with the same brand+model in the category instead of being added as "<model> (Harmony)" — dashboards reference devices by brand+model, so the renamed copy broke every reference. Imports stored with that suffix in the browser are renamed on load.
+
+### Added
+
+- Converter test for state-based inputs (`tests/test_harmony_import.mjs`).
+
 ## [0.5.0] 2026-10-08
 
 ### Added

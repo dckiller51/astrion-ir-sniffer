@@ -50,9 +50,29 @@
     return Number.isFinite(n) && n >= 0 ? Math.round(n) : fallback;
   }
 
-  /** One archive action-list step → an Astrion step, or null to drop it
-   * ({set, to} only records a state value — nothing is transmitted). */
-  function convertStep(step) {
+  const MAX_STATE_DEPTH = 4;
+
+  /** The key sequence that selects `value` of device state `state` — the
+   * archive's `states.<state>.values[name=value].select[0].commands`, or
+   * null when the device doesn't say how (then nothing is sent for it). */
+  function stateSelectCommands(states, state, value) {
+    const values = (states && states[state] && states[state].values) || [];
+    const match = values.find(v => cleanName(v.name).toLowerCase() === cleanName(value).toLowerCase());
+    const route = match && Array.isArray(match.select) ? match.select[0] : null;
+    return route && Array.isArray(route.commands) ? route.commands : null;
+  }
+
+  /** One archive action-list step → Astrion step(s), or null to drop it.
+   * A `{set, to}` step is expanded into the key sequence the device's
+   * `states` block gives for reaching that value — that's how many devices
+   * (e.g. LG TVs: input "HDMI 2" = set Screen to HDMI2 = InputHdmi2) define
+   * their inputs; a state with no route sends nothing, as on Harmony. */
+  function convertStep(step, states, depth) {
+    if (step && typeof step === 'object' && 'set' in step) {
+      const commands = (depth || 0) < MAX_STATE_DEPTH ? stateSelectCommands(states, step.set, step.to) : null;
+      const expanded = commands ? convertSteps(commands, states, (depth || 0) + 1) : [];
+      return expanded.length ? expanded : null;
+    }
     if (typeof step === 'string') {
       const id = cleanName(step);
       return id ? id : null;
@@ -71,8 +91,11 @@
     return null;
   }
 
-  function convertSteps(list) {
-    return (Array.isArray(list) ? list : []).map(convertStep).filter(s => s !== null);
+  function convertSteps(list, states, depth) {
+    return (Array.isArray(list) ? list : [])
+      .map(step => convertStep(step, states, depth))
+      .filter(s => s !== null)
+      .flat();
   }
 
   /** Command ids a list of steps references — used to flag macros that
@@ -83,13 +106,13 @@
       .filter(Boolean);
   }
 
-  function convertPower(power) {
+  function convertPower(power, states) {
     if (!power || typeof power !== 'object') return { type: 'unknown' };
     const type = ['discrete', 'toggle', 'none'].includes(power.type) ? power.type : 'unknown';
     const out = { type };
-    if (power.on) out.on = convertSteps(power.on);
-    if (power.off) out.off = convertSteps(power.off);
-    if (power.toggle) out.toggle = convertSteps(power.toggle);
+    if (power.on) out.on = convertSteps(power.on, states);
+    if (power.off) out.off = convertSteps(power.off, states);
+    if (power.toggle) out.toggle = convertSteps(power.toggle, states);
     return out;
   }
 
@@ -105,10 +128,10 @@
     };
   }
 
-  function convertInputs(inputs) {
+  function convertInputs(inputs, states) {
     const list = (inputs && Array.isArray(inputs.list)) ? inputs.list : [];
     return list
-      .map(i => ({ name: cleanName(i.name), steps: convertSteps(i.commands) }))
+      .map(i => ({ name: cleanName(i.name), steps: convertSteps(i.commands, states) }))
       .filter(i => i.name && i.steps.length);
   }
 
@@ -135,9 +158,9 @@
     const profile = {
       source: 'harmony-archive',
       global_device_id: device.globalDeviceId,
-      power: convertPower(device.power),
+      power: convertPower(device.power, device.states),
       timing: convertTiming(device.timing),
-      inputs: convertInputs(device.inputs)
+      inputs: convertInputs(device.inputs, device.states)
     };
 
     const allSteps = []

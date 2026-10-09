@@ -57,3 +57,28 @@ test('flags macros referencing a command the codeset lacks', () => {
   const r = H.convertDevice({ ...samsung, inputs: { list: [{ name: 'AUX', commands: ['InputAux'] }] } }, codeset);
   assert.match(r.warnings.join(' '), /InputAux/);
 });
+
+test('inputs defined as a device state follow the state select route (e.g. LG TVs)', () => {
+  const lg = {
+    manufacturer: 'LG', model: 'OLED65B8', globalDeviceId: 480369, deviceType: 1,
+    power: { type: 'discrete', on: ['PowerOn'], off: ['PowerOff'] },
+    inputs: { list: [
+      { name: 'HDMI 2', commands: [{ set: 'Screen', to: 'HDMI2' }] },
+      { name: 'TV', commands: [{ set: 'Screen', to: 'Antenna' }, { set: 'TVInput', to: 'TV' }] },
+      { name: 'Ghost', commands: [{ set: 'Screen', to: 'Nowhere' }] }
+    ] },
+    states: {
+      Screen: { values: [
+        { name: 'Antenna', select: [{ commands: ['InputTv', { delayMs: 2000 }], setType: 1 }] },
+        { name: 'HDMI2', select: [{ commands: ['InputHdmi2'], setType: 1 }] }
+      ] },
+      TVInput: { next: ['InputTv'], values: [{ name: 'TV' }] }
+    }
+  };
+  const cs = { commands: ['InputHdmi2', 'InputTv', 'PowerOn', 'PowerOff'].map(n => ({ name: n, pronto: '0000 006D 0001 0000 0010 0010' })) };
+  const r = H.convertDevice(lg, cs);
+  assert.deepEqual(r.entry.profile.inputs, [
+    { name: 'HDMI 2', steps: ['InputHdmi2'] },
+    { name: 'TV', steps: ['InputTv', { delay_ms: 2000 }] }
+  ]);
+});
