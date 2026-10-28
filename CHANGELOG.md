@@ -3,6 +3,13 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.2] 2026-10-28
+
+### Changed
+
+- **Send to my remote** is hidden on the GitHub Pages site: browsers block an HTTPS page from reaching the remote's plain-HTTP server, so it could never work there and users kept trying it. It stays in a local run (Docker / `app.py`), where it works.
+- After **Generate files**, the help now says to send them from the remote's web page (**IR database** › **Upload**) instead of copying them to `/sdcard/astrion/ir-database/` by hand.
+
 ## [0.5.1] 2026-10-09
 
 ### Fixed

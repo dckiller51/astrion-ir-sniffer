@@ -403,9 +403,8 @@
   </div>
   <p data-i18n="desc">
     Check the devices you own. "Generate files" downloads one JSON file per
-    selected category, in the same format as
-    <code>ir-database/&lt;category&gt;.json</code> — ready to copy as-is
-    onto the remote, into <code>/sdcard/astrion/ir-database/</code>.
+    selected category. Then send them to the remote from its web page:
+    <b>http://&lt;remote IP&gt;:8080</b> › <b>IR database</b> › <b>Upload</b>.
   </p>
 </header>
 
@@ -480,7 +479,7 @@
   const translations = {
     en: {
       title: "Astrion IR Database",
-      desc: 'Check the devices you own. "Generate files" downloads one JSON file per selected category, in the same format as <code>ir-database/&lt;category&gt;.json</code> — ready to copy as-is onto the remote, into <code>/sdcard/astrion/ir-database/</code>.',
+      desc: 'Check the devices you own. "Generate files" downloads one JSON file per selected category. Then send them to the remote from its web page: <b>http://&lt;remote IP&gt;:8080</b> › <b>IR database</b> › <b>Upload</b>.',
       search_placeholder: "Filter by brand or model…",
       btn_select_all: "Select all (category)",
       btn_deselect_all: "Deselect all (category)",
@@ -503,7 +502,7 @@
       index_load_error: 'Couldn\'t load index.json. This page must be served over http(s) (GitHub Pages, or <code>npx http-server</code> locally) — it won\'t work opened directly as a local file (file://).',
       cmd_count: "{n} cmd",
       status_generating: "Generating {n} file(s)…",
-      status_done: "{n} file(s) downloaded — copy them to /sdcard/astrion/ir-database/ on the remote.",
+      status_done: "{n} file(s) downloaded — send them to the remote: its web page (http://<remote IP>:8080) › IR database › Upload.",
       status_saving_direct: "Saving {n} file(s) to the folder you picked…",
       status_saved_direct: "Saved {n} file(s) directly to \"{folder}/ir-database/\".",
       status_save_direct_cancelled: "Cancelled — nothing was saved.",
@@ -535,7 +534,7 @@
     },
     fr: {
       title: "Astrion IR Database",
-      desc: 'Cochez les appareils que vous possédez. « Générer les fichiers » télécharge un fichier JSON par catégorie sélectionnée, dans le même format que <code>ir-database/&lt;catégorie&gt;.json</code> — prêt à copier tel quel sur la télécommande, dans <code>/sdcard/astrion/ir-database/</code>.',
+      desc: 'Cochez les appareils que vous possédez. « Générer les fichiers » télécharge un fichier JSON par catégorie sélectionnée. Envoyez-les ensuite à la télécommande depuis sa page web : <b>http://&lt;IP de la télécommande&gt;:8080</b> › <b>Base IR</b> › <b>Envoyer</b>.',
       search_placeholder: "Filtrer par marque ou modèle…",
       btn_select_all: "Tout cocher (catégorie)",
       btn_deselect_all: "Tout décocher (catégorie)",
@@ -558,7 +557,7 @@
       index_load_error: "Impossible de charger index.json. Cette page doit être servie en http(s) (GitHub Pages, ou <code>npx http-server</code> en local) — elle ne fonctionne pas ouverte directement en fichier local (file://).",
       cmd_count: "{n} cmd",
       status_generating: "Génération de {n} fichier(s)…",
-      status_done: "{n} fichier(s) téléchargé(s) — copiez-les dans /sdcard/astrion/ir-database/ sur la télécommande.",
+      status_done: "{n} fichier(s) téléchargé(s) — envoyez-les à la télécommande : sa page web (http://<IP de la télécommande>:8080) › Base IR › Envoyer.",
       status_saving_direct: "Enregistrement de {n} fichier(s) dans le dossier choisi…",
       status_saved_direct: "{n} fichier(s) enregistré(s) directement dans « {folder}/ir-database/ ».",
       status_save_direct_cancelled: "Annulé — rien n'a été enregistré.",
@@ -623,16 +622,6 @@
     document.getElementById('btn-en').classList.toggle('active', lang === 'en');
     document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
     
-    // If disabled via GitHub Pages, re-apply the translated text to the tooltip
-    if (window.location.hostname.includes('github.io')) {
-      const sendRemoteBtn = document.getElementById('sendRemoteBtn');
-      if (sendRemoteBtn) {
-        sendRemoteBtn.title = currentLang === 'fr' 
-          ? "Fonction disponible uniquement en local (le HTTPS de GitHub Pages bloque les requêtes HTTP vers le réseau local)."
-          : "Available in local run only (GitHub Pages HTTPS blocks HTTP requests to local network).";
-      }
-    }
-
     // Re-render everything built dynamically in JS (category nav labels
     // come from the user's own index.json and stay as-is — only this
     // tool's own chrome, all routed through t(), needs a re-render).
@@ -1364,13 +1353,11 @@
         });
       });
 
-      // Specific handling for GitHub Pages: grey out the remote button and display the hint
+      // GitHub Pages (HTTPS) can't reach the remote's plain-HTTP server: browsers block it as
+      // mixed content. The button is hidden there (0.5.2) — users kept trying it — and stays for
+      // a local run (Docker / app.py, plain HTTP), where it works.
       if (window.location.hostname.includes('github.io')) {
-        sendRemoteBtn.style.opacity = '0.5';
-        sendRemoteBtn.title = currentLang === 'fr' 
-          ? "Fonction disponible uniquement en local (le HTTPS de GitHub Pages bloque les requêtes HTTP vers le réseau local)."
-          : "Available in local run only (GitHub Pages HTTPS blocks HTTP requests to local network).";
-        document.getElementById('remoteHint').style.display = 'block';
+        sendRemoteBtn.parentElement.style.display = 'none';
       }
 
       renderCategoryNav();
