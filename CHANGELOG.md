@@ -3,6 +3,12 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.3] 2026-10-29
+
+### Changed
+
+- **"Import from Harmony…" is now "Import from the Harmony archive…"**: it imports from Logitech's public archive of device codes, not from your own Harmony hub or remote, which the old name suggested. Reported by a user.
+
 ## [0.5.2] 2026-10-28
 
 ### Changed
